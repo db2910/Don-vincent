@@ -1,0 +1,6 @@
+.section { text-align: center; position: relative; background: var(--champagne); }
+.ornament { display: block; color: #8c6f3d; font-size: 34px; margin-bottom: 24px; }
+.title { margin: 16px 0 19px; font: 400 clamp(32px,4vw,46px)/1.4 var(--font-serif); }
+.description { max-width: 430px; margin: 0 auto 30px; font-size: 22px; line-height: 1.7; }
+.calendarNote { margin: 19px auto 0; max-width: 360px; font-size: 16px; line-height: 1.7; }
+.error { max-width: 380px; margin: 16px auto 0; font-size: 17px; }

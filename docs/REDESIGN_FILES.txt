@@ -1,0 +1,62 @@
+README.md
+docs/ANIMATION_SPECIFICATION.md
+docs/ASSET_INVENTORY.md
+docs/CLIENT_DETAILS_PENDING.md
+docs/DESIGN_SYSTEM.md
+docs/IMPLEMENTATION_REPORT.md
+docs/PROJECT_REQUIREMENTS.md
+docs/REDESIGN_FILES.txt
+docs/REDESIGN_REPORT.md
+docs/screenshots/redesign/envelope-closed-desktop.png
+docs/screenshots/redesign/envelope-closed-mobile.png
+docs/screenshots/redesign/envelope-mobile-mid.png
+docs/screenshots/redesign/envelope-revealed-desktop.png
+docs/screenshots/redesign/envelope-revealed-landscape.png
+docs/screenshots/redesign/envelope-revealed-mobile.png
+docs/screenshots/redesign/envelope-revealed-tablet.png
+docs/screenshots/redesign/hero-desktop-initial.png
+docs/screenshots/redesign/hero-mobile-initial.png
+docs/screenshots/redesign/hero-mobile-revised.png
+docs/screenshots/redesign/hero-small-phone.png
+docs/screenshots/redesign/production-hero-1440.png
+docs/screenshots/redesign/production-hero-390.png
+docs/screenshots/redesign/production-invitation-1440.png
+docs/screenshots/redesign/production-invitation-390.png
+public/images/moments/WhatsApp Image 2026-11-06 at 12.04.15.jpeg
+public/images/moments/WhatsApp Image 2026-11-06 at 12.04.16 (1).jpeg
+public/images/moments/WhatsApp Image 2026-11-06 at 12.04.16.jpeg
+public/images/moments/WhatsApp Image 2026-11-06 at 12.04.18.jpeg
+public/images/moments/WhatsApp Image 2026-11-06 at 12.04.21.jpeg
+src/app/globals.css
+src/app/page.tsx
+src/components/envelope/EnvelopeExperience.module.css
+src/components/envelope/EnvelopeExperience.tsx
+src/components/envelope/InvitationCard.tsx
+src/components/envelope/WaxSeal.tsx
+src/components/invitation/CelebrationDetails.tsx
+src/components/invitation/ClosingMessage.tsx
+src/components/invitation/CoupleStory.tsx
+src/components/invitation/FormalInvitation.tsx
+src/components/invitation/PhotoGallery.module.css
+src/components/invitation/PhotoGallery.tsx
+src/components/invitation/SaveTheDate.module.css
+src/components/invitation/SaveTheDate.tsx
+src/components/invitation/WeddingCountdown.module.css
+src/components/invitation/WeddingCountdown.tsx
+src/components/invitation/WeddingHero.module.css
+src/components/invitation/WeddingHero.tsx
+src/components/rsvp/RSVPForm.test.tsx
+src/components/rsvp/RSVPForm.tsx
+src/components/rsvp/rsvp.css
+src/components/shared/FallingHearts.module.css
+src/components/shared/FallingHearts.tsx
+src/components/shared/MusicToggle.module.css
+src/components/shared/MusicToggle.tsx
+src/components/shared/SectionReveals.tsx
+src/lib/calendar/countdown.ts
+src/lib/music.ts
+src/lib/wedding-config.ts
+tests/calendar.test.ts
+tests/countdown-gallery.test.tsx
+tests/e2e/invitation.spec.ts
+tests/envelope.test.tsx

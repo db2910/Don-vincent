@@ -1,0 +1,9 @@
+.countdown { width: min(550px,100%); margin: 20px auto 18px; text-align: center; color: var(--pearl); }
+.heading { font-size: 14px; letter-spacing: 2.5px; color: #f0ddba; }
+.counters { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); margin: 12px 0 10px; }
+.counter { display: flex; flex-direction: column; gap: 7px; border-left: 1px solid #e5c78b66; padding: 0 12px; }
+.counter:first-child { border: 0; }
+.counter > span:first-child { font: 400 clamp(30px,3.7vw,48px)/1.1 var(--font-serif); font-variant-numeric: tabular-nums; }
+.counter > span:last-child { font: 14px/1.4 var(--font-body); letter-spacing: 1px; text-transform: uppercase; }
+.note { font-size: 14px; line-height: 1.6; color: #f1e7d7; }
+@media(max-width:600px) { .countdown { margin: 17px auto; } .heading { font-size: 14px; letter-spacing: 1.5px; } .counter { padding: 0 7px; gap: 4px; } .counter > span:first-child { font-size: clamp(28px,7.8vw,42px); } .counter > span:last-child { font-size: 14px; } .note { font-size: 14px; padding: 0 5px; } }

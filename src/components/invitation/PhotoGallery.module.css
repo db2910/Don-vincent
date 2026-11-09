@@ -1,0 +1,30 @@
+.section { background: var(--ivory); }
+.heading { text-align: center; margin-bottom: 48px; }
+.heading h2 { font: 400 clamp(32px,4vw,46px)/1.4 var(--font-serif); margin: 15px 0; }
+.heading > p:last-child { font-size: 21px; line-height: 1.7; }
+.collection { width: min(1040px,100%); margin-inline: auto; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 48px 40px; align-items: start; }
+.single { display: block; width: min(900px,100%); }
+.figure { margin: 0; min-width: 0; }
+.figure:nth-child(even) { margin-top: 72px; }
+.photoButton { display: block; padding: 9px; background: var(--pearl); border: 1px solid #c4a46a88; position: relative; width: 100%; cursor: zoom-in; box-shadow: 0 12px 32px #5747370b; overflow: hidden; }
+.photo { display: block; width: 100%; height: auto; transition: transform .7s; }
+.photoButton:hover .photo { transform: scale(1.025); }
+.photoButton:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
+.enlarge { position: absolute; bottom: 23px; right: 23px; display: flex; gap: 9px; align-items: center; padding: 10px 13px; color: #fffdf8; background: #30271dde; font-family: var(--font-body); font-size: 15px; }
+.caption { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 15px; padding-inline: 4px; }
+.caption > span:first-child { font-size: clamp(29px,3.2vw,38px); }
+.caption > span:last-child { font-size: 14px; letter-spacing: .06em; white-space: nowrap; }
+.dialog { border: 0; background: transparent; color: var(--pearl); padding: min(3vw,32px); max-width: 100vw; max-height: 100svh; width: 100vw; height: 100svh; margin: auto; overflow: auto; }
+.dialog[open] { display: flex; align-items: center; justify-content: center; animation: lightbox-in .25s ease-out; }
+.dialog::backdrop { background: #17130ff2; backdrop-filter: blur(5px); }
+.lightboxContent { position: relative; width: min(1100px,100%); max-height: 100%; }
+.close { position: absolute; z-index: 1; right: 10px; top: 10px; width: 44px; height: 44px; border: 1px solid #fffdf855; border-radius: 50%; background: #211a14e6; color: #fffdf8; cursor: pointer; font-size: 30px; line-height: 1; }
+.close:focus-visible,.arrow:focus-visible { outline: 2px solid #fffdf8; outline-offset: 3px; }
+.lightboxImage { display: flex; justify-content: center; touch-action: pan-y; }
+.fullPhoto { display: block; width: auto; height: auto; max-width: 100%; max-height: calc(100svh - 150px); object-fit: contain; }
+.lightboxFooter { display: flex; align-items: center; justify-content: center; gap: 22px; padding-top: 20px; min-height: 70px; }
+.lightboxFooter p { font-size: 17px; line-height: 1.5; text-align: center; }
+.arrow { flex-shrink: 0; width: 44px; height: 44px; border: 1px solid #fffdf855; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; font-size: 22px; }
+@media(max-width:640px) { .collection { grid-template-columns: 1fr; gap: 35px; } .figure:nth-child(even) { margin-top: 0; } .heading { margin-bottom: 32px; } .heading > p:last-child { font-size: 19px; } .photoButton { padding: 7px; } .enlarge { right: 17px; bottom: 17px; padding: 8px 10px; } .caption { gap: 8px; } .caption > span:first-child { font-size: 31px; } .lightboxFooter { gap: 10px; } .lightboxFooter p { font-size: 16px; } }
+@keyframes lightbox-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@media(prefers-reduced-motion:reduce) { .photo { transition: none; } .dialog[open] { animation: none; } }
