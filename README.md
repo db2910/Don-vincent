@@ -79,7 +79,9 @@ Current redesign results, changed files, screenshots and honest verification lim
 
 ## Prepare for Vercel
 
-No deployment has been performed. Import this folder as a Next.js project when explicitly ready. Use the standard `npm run build` command and configure production environment variables in Vercel's project settings. Set the real `NEXT_PUBLIC_BASE_URL`, use the hosts' Supabase project, apply the migration first, and use the correct verified email/WhatsApp contacts.
+The root `vercel.json` explicitly selects Next.js, runs `npm run build`, and resets the output directory to the framework default. In Vercel, keep Root Directory at the repository root (blank), rather than `src` or `public`. Serving only `public` exposes images but leaves the homepage and API routes returning 404. Redeploy the latest `main` commit after changing project settings.
+
+Configure production environment variables in Vercel's project settings. Set the real `NEXT_PUBLIC_BASE_URL`, use the hosts' Supabase project, apply the migration first, and use the correct verified email/WhatsApp contacts.
 
 Before launching: confirm pending client details; test database/RLS and a real email with the hosts' approval in staging; verify the venue map and downloadable calendar on guest devices; configure the retry scheduler and privacy retention process; verify social previews on the real domain; review mobile accessibility and approved music licensing. The Vercel edge must supply its trusted IP header for distributed request limiting. On another host, sanitize and supply `x-real-ip` at a trusted reverse proxy.
 
