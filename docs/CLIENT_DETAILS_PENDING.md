@@ -1,19 +1,13 @@
-# Client details pending
+# Confirmed details and remaining setup
 
-Confirmed: Shee Salamata & Don Vincent; Gusaba Wedding; Thursday, 17 December 2026; Kigali Serena Hotel; Africa/Kigali; S & D. Added photographs are explicitly authorized by the redesign brief and now incorporated.
+Confirmed: Shee Salamata & Don Vincent; Civil Wedding; Thursday, 17 December 2026; civil marriage at City Hall at 3:00 PM; reception at Kigali Serena Hotel at 4:00 PM; Africa/Kigali; S & D.
 
-| Pending detail | Current behavior | Configuration / action |
-| --- | --- | --- |
-| Ceremony start/end | Provisional hero countdown to the beginning of 17 December in Kigali; labelled date countdown, ceremony time unconfirmed. Calendar remains all-day. | Set confirmed `startTime`/`endTime` in HH:mm Kigali time. `countdown.useDateBeginningWhenTimeUnknown` controls the provisional target. |
-| RSVP deadline | Omitted | Set approved `rsvpDeadline`. |
-| Host WhatsApp | Secondary action disabled with explanation | Set verified `NEXT_PUBLIC_HOST_WHATSAPP`. |
-| Host notification sender/recipient | No recipient invented; no real email sent | Set Resend credentials, verified sender, recipient and retry secret. |
-| Approved wedding song | None found; player hidden, full gesture-based system ready | Place the approved audio in `public/audio/`; set `music.src` and `music.title`. Opening click requests playback; blocked audio can be retried manually. |
-| Biography, programme, extra family names, dress code | Not invented | Supply approved content before adding it. |
-| Accommodation rates | No quotes, price limits or booking claims | Guest preferences are for planning only. |
-| Domain | No invented canonical URL | Set actual `NEXT_PUBLIC_BASE_URL` before launch. |
-| Database credentials and privacy retention date | Development preview is explicitly unpersisted; production fails safely until configured | Apply migration in staging, verify RLS/concurrency, configure production secrets and agree retention/deletion with hosts. |
+The itinerary shows these two events only. The hero uses `couple.jpeg` on every screen size. The countdown targets the ceremony, and the calendar includes separate, correctly timed ceremony and reception events. End times have not been supplied and are omitted.
 
-The audio scan found no MP3, WAV, OGG, M4A, AAC, FLAC, Opus or similar file. `public/audio/wedding-song.mp3` is a suggested future path, not an existing or fabricated song.
+The host supplied `public/audio/perfect.mp3` and selected Perfect by Ed Sheeran. Its floating play/pause control is enabled; the envelope opening requests playback through a user gesture. Refresh always returns to a fresh envelope.
 
-All nine original new photos remain unchanged under `client-assets/pending-review/`. Five suitable two-person compositions are copied byte-for-byte, with original filenames, into `public/images/moments/`. The desktop hero uses 12.04.15, phone hero 12.04.16 (1), couple introduction 12.04.21, supporting collage 12.04.18, and gallery 12.04.16/18/21 plus the original `couple.jpeg`. The other originals remain outside public hosting. Full descriptions, measurements and rationale are in `ASSET_INVENTORY.md`.
+The notification recipient was supplied privately. Configure it in the server-only `RSVP_NOTIFICATION_TO` variable, alongside the Resend key, verified sender, retry secret, Supabase credentials and rate-limit secret. A private scheduler must invoke the existing notification retry endpoint. No email credentials, database credentials or recipient address are included in the public client configuration.
+
+Still pending: RSVP deadline, host WhatsApp number, exact City Hall address if directions are needed, event end times, biography, extra family names, dress code, database/email provisioning and agreed data retention. Accommodation preferences remain planning requests, not bookings or price quotes.
+
+The other approved photographs remain in the introduction collage and gallery. Unselected originals stay in ignored `client-assets/pending-review/` and are not publicly hosted.

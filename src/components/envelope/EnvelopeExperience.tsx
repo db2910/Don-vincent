@@ -12,7 +12,6 @@ import WaxSeal from "./WaxSeal";
 import styles from "./EnvelopeExperience.module.css";
 
 export type EnvelopeState = "idle" | "opening" | "revealing-card" | "card-visible" | "transitioning" | "completed";
-const SESSION_KEY = "sd-invitation-opened";
 
 // All cues belong to this single timeline. The paper's travel is a percentage of
 // its own fixed, responsive size, so resizing never depends on moving bounds.
@@ -51,7 +50,6 @@ export default function EnvelopeExperience() {
   const complete = useCallback(() => {
     stopTimeline();
     opening.current = false;
-    try { sessionStorage.setItem(SESSION_KEY, "true"); } catch { /* Session memory is optional. */ }
     updateState("completed");
     dialog.current?.close();
     unlock();
@@ -78,9 +76,7 @@ export default function EnvelopeExperience() {
   }, [unlock]);
 
   useEffect(() => {
-    let remembered = false;
-    try { remembered = sessionStorage.getItem(SESSION_KEY) === "true"; } catch { /* Private browsing is supported. */ }
-    if (!remembered) showEnvelope();
+    showEnvelope();
     const modal = dialog.current;
     return () => {
       stopTimeline();

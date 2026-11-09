@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createWeddingCalendar, escapeCalendarText, foldCalendarLine, zonedDateTime, type CalendarWedding } from "@/lib/calendar";
 import { getCountdownParts, getCountdownTarget } from "@/lib/calendar/countdown";
+import { weddingConfig } from "@/lib/wedding-config";
 
 const wedding: CalendarWedding = {
   date: "2026-12-17", timezone: "Africa/Kigali", startTime: null, endTime: null,
@@ -8,6 +9,15 @@ const wedding: CalendarWedding = {
 };
 
 describe("wedding calendar", () => {
+  it("exports civil marriage and reception at their confirmed Kigali times and venues", () => {
+    const calendar = createWeddingCalendar(weddingConfig);
+    expect(calendar.match(/BEGIN:VEVENT/g)).toHaveLength(2);
+    expect(calendar).toContain("DTSTART:20261217T130000Z");
+    expect(calendar).toContain("DTSTART:20261217T140000Z");
+    expect(calendar).toContain("LOCATION:City Hall");
+    expect(calendar).toContain("LOCATION:Kigali Serena Hotel");
+    expect(calendar).not.toMatch(/gusaba|DTEND:/i);
+  });
   it("exports the confirmed date as an all-day event with an exclusive next-day end", () => {
     const calendar = createWeddingCalendar(wedding, new Date("2026-11-08T12:00:00Z"));
     expect(calendar).toContain("DTSTART;VALUE=DATE:20261217\r\nDTEND;VALUE=DATE:20261218");
@@ -16,8 +26,10 @@ describe("wedding calendar", () => {
     expect(calendar.endsWith("END:VCALENDAR\r\n")).toBe(true);
     expect(calendar).not.toContain("DTSTART:");
   });
-  it("keeps an all-day event if either confirmed time is absent", () => {
-    expect(createWeddingCalendar({ ...wedding, startTime: "14:00" })).toContain("DTSTART;VALUE=DATE");
+  it("uses a known start time without inventing an end time", () => {
+    const timed = createWeddingCalendar({ ...wedding, startTime: "15:00" });
+    expect(timed).toContain("DTSTART:20261217T130000Z");
+    expect(timed).not.toContain("DTEND:");
     expect(createWeddingCalendar({ ...wedding, endTime: "18:00" })).toContain("DTSTART;VALUE=DATE");
   });
   it("resolves the wedding's Kigali times rather than the guest's timezone", () => {

@@ -5,6 +5,7 @@ export interface CalendarWedding {
   endTime: string | null;
   names: { combined: string };
   venue: { name: string };
+  programme?: { title: string; time: string; location: string; description?: string }[];
 }
 
 function dateParts(date: string): [number, number, number] {
@@ -67,12 +68,15 @@ function utcCalendarDate(date: Date): string {
 export function createWeddingCalendar(config: CalendarWedding, now = new Date()): string {
   dateParts(config.date);
   const eventDates: string[] = [];
-  if (config.startTime && config.endTime) {
+  if (config.startTime) {
     const start = zonedDateTime(config.date, config.startTime, config.timezone);
-    const end = zonedDateTime(config.date, config.endTime, config.timezone);
-    if (end <= start) throw new Error("Wedding end time must be after the start time");
     // UTC event instants are universally supported and preserve the configured local times.
-    eventDates.push(`DTSTART:${utcCalendarDate(start)}`, `DTEND:${utcCalendarDate(end)}`);
+    eventDates.push(`DTSTART:${utcCalendarDate(start)}`);
+    if (config.endTime) {
+      const end = zonedDateTime(config.date, config.endTime, config.timezone);
+      if (end <= start) throw new Error("Wedding end time must be after the start time");
+      eventDates.push(`DTEND:${utcCalendarDate(end)}`);
+    }
   } else {
     const nextDay = new Date(`${config.date}T00:00:00.000Z`);
     nextDay.setUTCDate(nextDay.getUTCDate() + 1);
@@ -81,11 +85,19 @@ export function createWeddingCalendar(config: CalendarWedding, now = new Date())
   return [
     "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Shee Salamata and Don Vincent//Wedding Invitation//EN",
     "CALSCALE:GREGORIAN", "METHOD:PUBLISH", `X-WR-TIMEZONE:${escapeCalendarText(config.timezone)}`,
-    "BEGIN:VEVENT", `UID:gusaba-${config.date}@shee-salamata-don-vincent.invitation`,
+    ...(config.programme?.length ? config.programme.flatMap((event, index) => [
+      "BEGIN:VEVENT", `UID:civil-wedding-${config.date}-${index}@shee-salamata-don-vincent.invitation`,
+      `DTSTAMP:${utcCalendarDate(now)}`,
+      `DTSTART:${utcCalendarDate(zonedDateTime(config.date, event.time, config.timezone))}`,
+      `SUMMARY:${escapeCalendarText(`${config.names.combined} — ${event.title}`)}`,
+      `LOCATION:${escapeCalendarText(event.location)}`,
+      `DESCRIPTION:${escapeCalendarText(event.description ?? "Celebrate our civil wedding with us.")}`,
+      "STATUS:CONFIRMED", "TRANSP:TRANSPARENT", "END:VEVENT",
+    ]) : ["BEGIN:VEVENT", `UID:civil-wedding-${config.date}@shee-salamata-don-vincent.invitation`,
     `DTSTAMP:${utcCalendarDate(now)}`, ...eventDates,
-    `SUMMARY:${escapeCalendarText(`${config.names.combined} — Gusaba Wedding`)}`,
+    `SUMMARY:${escapeCalendarText(`${config.names.combined} — Civil Wedding`)}`,
     `LOCATION:${escapeCalendarText(config.venue.name)}`,
-    `DESCRIPTION:${escapeCalendarText("Together with our families, we joyfully invite you to celebrate our Gusaba Wedding.")}`,
-    "STATUS:CONFIRMED", "TRANSP:TRANSPARENT", "END:VEVENT", "END:VCALENDAR",
+    `DESCRIPTION:${escapeCalendarText("Together with our families, we joyfully invite you to celebrate our Civil Wedding.")}`,
+    "STATUS:CONFIRMED", "TRANSP:TRANSPARENT", "END:VEVENT"]), "END:VCALENDAR",
   ].map(foldCalendarLine).join("\r\n") + "\r\n";
 }

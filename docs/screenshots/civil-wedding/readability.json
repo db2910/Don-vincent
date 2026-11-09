@@ -1,0 +1,22 @@
+[
+  {
+    "width": 320,
+    "minimumContrast": 6.14,
+    "failures": []
+  },
+  {
+    "width": 390,
+    "minimumContrast": 7.52,
+    "failures": []
+  },
+  {
+    "width": 768,
+    "minimumContrast": 8.04,
+    "failures": []
+  },
+  {
+    "width": 1440,
+    "minimumContrast": 7.58,
+    "failures": []
+  }
+]

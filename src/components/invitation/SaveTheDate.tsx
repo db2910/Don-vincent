@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { weddingConfig } from "@/lib/wedding-config";
+import { formatEventTime, weddingConfig } from "@/lib/wedding-config";
 import { createWeddingCalendar } from "@/lib/calendar";
 import styles from "./SaveTheDate.module.css";
 
@@ -43,7 +43,7 @@ export default function SaveTheDate() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="1"/><path d="M7 2v6M17 2v6M3 11h18M8 16h8"/></svg>
         Add to calendar
       </button>
-      <p className={styles.calendarNote}>{weddingConfig.startTime && weddingConfig.endTime ? `Ceremony time is shown in ${weddingConfig.timezone}.` : "Saved as an all-day event · Ceremony time to be confirmed"}</p>
+      <p className={styles.calendarNote}>{weddingConfig.startTime ? `Civil marriage at ${formatEventTime(weddingConfig.startTime)} · Reception at 4:00 PM · Kigali time. Both events are included.` : "Saved as an all-day event · Ceremony time to be confirmed"}</p>
       {error && <p role="alert" className={styles.error}>{error}</p>}
     </section>
   );

@@ -63,10 +63,11 @@ export default function MusicToggle() {
     if (playing || !audio.current.paused) audio.current.pause(); else void start();
   }
   return <div className={styles.player} data-editing={editing}>
+    <span className={styles.track} id="wedding-music-track">{weddingConfig.music.title}</span>
     <audio ref={audio} src={source} preload="none" loop
       onPlay={() => { setPlaying(true); setError(false); }} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)}
       onError={() => { setPlaying(false); setPending(false); setError(true); starting.current = false; }}/>
-    <button type="button" className={`${styles.button} ${playing ? styles.playing : ""}`} onClick={toggle} aria-label={pending ? "Loading wedding music" : playing ? "Pause wedding music" : "Play wedding music"} aria-pressed={playing} disabled={pending} title={weddingConfig.music.title ?? "Wedding music"}>
+    <button type="button" className={`${styles.button} ${playing ? styles.playing : ""}`} onClick={toggle} aria-label={pending ? "Loading wedding music" : playing ? "Pause wedding music" : "Play wedding music"} aria-describedby="wedding-music-track" aria-pressed={playing} disabled={pending} title={weddingConfig.music.title ?? "Wedding music"}>
       {pending ? <LoaderCircle className={styles.loading} size={18}/> : playing ? <Pause size={18} fill="currentColor"/> : <Play size={18} fill="currentColor"/>}
     </button>
     {error && <p className={styles.error} role="status">Music could not play. Tap to try again.</p>}

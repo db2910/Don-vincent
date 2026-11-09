@@ -41,7 +41,7 @@ section[id] { scroll-margin-top:24px; }
 .ornament-divider > span { width:52px; height:1px; background:var(--line); }
 .skip-link { position:fixed; left:16px; top:-100px; z-index:120; background:var(--ink); color:white; padding:12px 20px; font-size:18px; }
 .skip-link:focus { top:12px; }
-.site-header { height:96px; padding:0 5%; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #f1e1c74d; background:linear-gradient(#21190f65,transparent); position:absolute; left:0; right:0; top:0; z-index:12; color:var(--pearl); }
+.site-header { height:96px; padding:0 5%; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #f1e1c74d; background:linear-gradient(#21190fd9,#21190fb0); position:absolute; left:0; right:0; top:0; z-index:12; color:var(--pearl); }
 .brand .monogram { font-size:36px; color:#f1debb; }
 .site-nav { display:flex; align-items:center; gap:30px; }
 .site-nav > a { font-size:14px; font-family:var(--font-serif); letter-spacing:.4px; transition:color .2s; }

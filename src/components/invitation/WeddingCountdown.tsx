@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { weddingConfig } from "@/lib/wedding-config";
+import { formatEventTime, weddingConfig } from "@/lib/wedding-config";
 import { getCountdownParts, getCountdownTarget } from "@/lib/calendar/countdown";
 import styles from "./WeddingCountdown.module.css";
 
@@ -21,6 +21,6 @@ export default function WeddingCountdown() {
     {target === null ? <p className={styles.note}>Thursday, 17 December 2026</p> : <div className={styles.counters} role="timer" aria-label="Time until our wedding date" aria-live="off">
       {(["days", "hours", "minutes", "seconds"] as const).map(unit => <div className={styles.counter} key={unit}><span>{parts ? String(parts[unit]).padStart(2,"0") : "—"}</span><span>{unit}</span></div>)}
     </div>}
-    <p className={styles.note}>{parts?.complete ? "Our wedding day has arrived. With love and gratitude." : !weddingConfig.startTime ? "Date countdown · Ceremony time unconfirmed" : `Our celebration draws closer · ${weddingConfig.timezone}`}</p>
+    <p className={styles.note}>{parts?.complete ? "Our wedding day has arrived. With love and gratitude." : !weddingConfig.startTime ? "Date countdown · Ceremony time unconfirmed" : `${formatEventTime(weddingConfig.startTime)} · Kigali time`}</p>
   </div>;
 }

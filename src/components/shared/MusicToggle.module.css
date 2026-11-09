@@ -1,6 +1,7 @@
-.player { position: fixed; right: max(20px, env(safe-area-inset-right)); bottom: calc(22px + env(safe-area-inset-bottom)); z-index: 45; transition: opacity .2s; }
+.player { position: fixed; right: max(20px, env(safe-area-inset-right)); bottom: calc(22px + env(safe-area-inset-bottom)); z-index: 45; display: flex; align-items: center; gap: 9px; transition: opacity .2s; }
+.track { padding: 6px 12px; border: 1px solid var(--line); border-radius: 20px; background: var(--pearl); color: var(--ink); font-size: 15px; box-shadow: 0 3px 16px #57473714; }
 .player[data-editing="true"] { visibility: hidden; opacity: 0; }
-.button { display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid var(--gold); border-radius: 50%; background: var(--pearl); color: var(--ink); box-shadow: 0 4px 20px #57473720; cursor: pointer; }
+.button { position: relative; display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid var(--gold); border-radius: 50%; background: var(--pearl); color: var(--ink); box-shadow: 0 4px 20px #57473720; cursor: pointer; }
 .button:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
 .button:disabled { cursor: wait; }
 .playing::after { content: ""; position: absolute; inset: -5px; border: 1px solid #c4a46a80; border-radius: 50%; animation: music-pulse 3s ease-out infinite; }
@@ -8,4 +9,10 @@
 .error { position: absolute; right: 0; bottom: 61px; width: 220px; padding: 14px; background: var(--pearl); border: 1px solid var(--gold); color: var(--ink); font-size: 16px; line-height: 1.6; box-shadow: 0 4px 16px #57473715; }
 @keyframes music-spin { to { transform: rotate(360deg); } }
 @keyframes music-pulse { 0% { transform: scale(.9); opacity: .7; } 100% { transform: scale(1.15); opacity: 0; } }
+@media(max-width:800px) {
+  .player { top: max(18px, env(safe-area-inset-top)); right: calc(6vw + 56px); bottom: auto; }
+  .button { width: 44px; height: 44px; }
+  .track { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; clip-path: inset(50%); overflow: hidden; white-space: nowrap; }
+  .error { top: 58px; bottom: auto; width: min(220px, calc(100vw - 100px)); }
+}
 @media(prefers-reduced-motion:reduce) { .playing::after,.loading { animation: none; } }

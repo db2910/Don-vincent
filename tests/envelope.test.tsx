@@ -66,7 +66,7 @@ describe("envelope lifecycle", () => {
     expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "instant" });
     expect(window.location.hash).toBe("#home");
     expect(document.body.style.overflow).toBe("");
-    expect(sessionStorage.getItem("sd-invitation-opened")).toBe("true");
+    expect(sessionStorage.getItem("sd-invitation-opened")).toBeNull();
   });
 
   it("skip interrupts the timeline, ignores its later callbacks and supports a fresh replay", async () => {
@@ -113,14 +113,13 @@ describe("envelope lifecycle", () => {
     expect(screen.getByRole("heading", { name: "Main invitation" })).toHaveFocus();
   });
 
-  it("remembers the session without opening or starting music and cleans up an active run on unmount", () => {
+  it("always shows the envelope despite an old session flag and cleans up an active run on unmount", () => {
     sessionStorage.setItem("sd-invitation-opened", "true");
     const timeline = pendingTimeline();
     mocks.animate.mockReturnValue(timeline);
     const { unmount } = renderInvitation();
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Open Your Invitation" })).toHaveAttribute("open");
     expect(mocks.requestMusic).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Open the envelope again" }));
     fireEvent.click(screen.getByRole("button", { name: "Open your invitation" }));
     unmount();
     expect(timeline.stop).toHaveBeenCalledOnce();

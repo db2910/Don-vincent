@@ -212,7 +212,7 @@ export default function RSVPForm({ previewMode, whatsappNumber, deadline }: Prop
   }
 
   const whatsappText = validPayload ? [
-    "RSVP for Shee Salamata & Don Vincent’s Gusaba Wedding — 17 December 2026",
+    "RSVP for Shee Salamata & Don Vincent’s Civil Wedding — 17 December 2026",
     ...responseLines(validPayload).map(([label, value]) => `${label}: ${value}`),
     ...(validPayload.guestMessage ? [`Message: ${validPayload.guestMessage}`] : []),
     "Accommodation preferences are for planning only, not a booking.",

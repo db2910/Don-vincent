@@ -13,7 +13,7 @@ test.afterEach(async ({page}) => { expect(pageErrors.get(page) ?? []).toEqual([]
 async function enter(page:Page) { await page.goto("/",{waitUntil:"domcontentloaded"}); await page.getByRole("button",{name:"Skip introduction"}).click(); }
 async function guest(page:Page) { await page.locator("#rsvp-fullName").fill("Test Guest"); await page.locator("#rsvp-contact").fill("guest@example.test"); }
 
-test("envelope runs all phases, remembers session and always returns replays to the hero",async({page})=>{
+test("envelope runs all phases, returns on refresh and always returns replays to the hero",async({page})=>{
   test.setTimeout(60_000);
   await page.goto("/",{waitUntil:"domcontentloaded"});
   const modal=page.getByRole("dialog",{name:"Open Your Invitation"});
@@ -27,7 +27,7 @@ test("envelope runs all phases, remembers session and always returns replays to 
   expect(await page.evaluate(()=>(window as unknown as {phases:string[]}).phases)).toEqual(expect.arrayContaining(['opening','revealing-card','card-visible','transitioning','completed']));
   await expect(page.locator('#couple-names')).toBeFocused();
   await expect(page.locator('body')).not.toHaveCSS('overflow','hidden');
-  await page.reload(); await expect(modal).not.toBeVisible();
+  await page.reload(); await expect(modal).toBeVisible();await page.getByRole("button",{name:"Skip introduction"}).click();
   const replay=page.getByRole('button',{name:'Open the envelope again'});
   for(let repeat=0;repeat<2;repeat++) {
     await replay.scrollIntoViewIfNeeded();
@@ -63,20 +63,55 @@ test('skip interruption, Escape, reduced motion and no-JavaScript access recover
   const context=await browser.newContext({javaScriptEnabled:false});const staticPage=await context.newPage();await staticPage.goto('http://127.0.0.1:3000');await expect(staticPage.locator('#couple-names')).toBeVisible();await expect(staticPage.locator('.envelope-dialog')).not.toBeVisible();await expect(staticPage.getByRole('form',{name:'Wedding RSVP'})).toHaveAttribute('method','post');await context.close();
 });
 
-test('hero is full-background photography with a provisional Kigali countdown and subtle hearts',async({page})=>{
+test('hero uses couple.jpeg with a confirmed Kigali countdown and subtle hearts',async({page})=>{
   await page.setViewportSize({width:1440,height:1000});await enter(page);
   const hero=page.locator('#home');const background=hero.locator('picture img');
-  const bounds=(await hero.boundingBox())!;const photo=(await background.boundingBox())!;
+  const bounds=(await hero.boundingBox())!;const photo=(await hero.locator('picture').boundingBox())!;
   expect(photo.width).toBeCloseTo(bounds.width,0);expect(photo.height).toBeCloseTo(bounds.height,0);expect(bounds.height).toBeGreaterThanOrEqual(1000);
-  await expect(hero.getByRole('timer')).toBeVisible();await expect(page.getByRole('timer')).toHaveCount(1);await expect(hero.getByText('Date countdown · Ceremony time unconfirmed')).toBeVisible();
-  await expect(background).toHaveAttribute('src',/12.04.15/);
+  await expect(hero.getByRole('timer')).toBeVisible();await expect(page.getByRole('timer')).toHaveCount(1);await expect(hero.getByText('3:00 PM · Kigali time')).toBeVisible();
+  await expect(background).toHaveAttribute('src',/couple.jpeg/);
   await expect(page.locator('[data-hearts="page"]')).toHaveCSS('pointer-events','none');expect(await page.locator('[data-hearts="page"] > span').count()).toBeLessThanOrEqual(12);
-  await expect(page.getByRole('button',{name:'Play wedding music'})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Play wedding music'})).toBeVisible();
 });
 
 test('the opening click requests music within the browser user gesture, once',async({page})=>{
   await page.addInitScript(()=>{(window as unknown as {musicGesture:boolean[]}).musicGesture=[];window.addEventListener('sd:request-wedding-music',()=>{(window as unknown as {musicGesture:boolean[]}).musicGesture.push(navigator.userActivation.isActive);});});
   await page.emulateMedia({reducedMotion:'reduce'});await page.goto('/');await page.getByRole('button',{name:'Open your invitation',exact:true}).click();expect(await page.evaluate(()=>(window as unknown as {musicGesture:boolean[]}).musicGesture)).toEqual([true]);
+});
+
+test('the supplied Perfect MP3 actually plays, pauses and resumes from the floating control', async({page})=>{
+  await page.goto('/');
+  await page.getByRole('button',{name:'Open your invitation',exact:true}).click();
+  await expect(page.locator('.envelope-dialog')).not.toBeVisible({timeout:10000});
+  const audio=page.locator('audio');
+  await expect(audio).toHaveAttribute('src','/audio/perfect.mp3');
+  await expect.poll(()=>audio.evaluate((element:HTMLAudioElement)=>element.currentTime)).toBeGreaterThan(0);
+  await expect(page.getByRole('button',{name:'Pause wedding music'})).toBeVisible();
+  await page.getByRole('button',{name:'Pause wedding music'}).click();
+  await expect.poll(()=>audio.evaluate((element:HTMLAudioElement)=>element.paused)).toBe(true);
+  await page.getByRole('button',{name:'Play wedding music'}).click();
+  await expect.poll(()=>audio.evaluate((element:HTMLAudioElement)=>element.paused)).toBe(false);
+});
+
+test('civil itinerary matches the confirmed programme and refresh at RSVP reopens the envelope', async({page})=>{
+  await enter(page);
+  const itinerary=page.locator('#itinerary');
+  await expect(itinerary.getByRole('heading',{name:'The Itinerary'})).toBeVisible();
+  await expect(itinerary.locator('li')).toHaveCount(2);
+  await expect(itinerary.locator('li').first()).toContainText('3:00 PM');
+  await expect(itinerary.locator('li').first()).toContainText('Civil Marriage');
+  await expect(itinerary.locator('li').first()).toContainText('City Hall');
+  await expect(itinerary.locator('li').last()).toContainText('4:00 PM');
+  await expect(itinerary.locator('li').last()).toContainText('Kigali Serena Hotel');
+  await expect(page.locator('body')).not.toContainText(/Gusaba/i);
+  await expect(page).toHaveTitle(/Civil Wedding Invitation/);
+  await page.locator('#rsvp').scrollIntoViewIfNeeded();
+  await page.evaluate(()=>history.replaceState(history.state,'','#rsvp'));
+  await page.reload();
+  await expect(page.locator('.envelope-dialog')).toBeVisible();
+  await expect(page.getByRole('button',{name:'Open your invitation',exact:true})).toBeInViewport();
+  await page.getByRole('button',{name:'Skip introduction'}).click();
+  await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBe(0);
 });
 
 for(const choice of ['yes','no','unsure','declined']) {
@@ -106,12 +141,12 @@ test('RSVP preserves conditional values and retains one idempotency key across a
   await page.getByRole('button',{name:'Send My RSVP'}).click();await expect(page.locator('#rsvp').getByRole('alert')).toContainText('couldn’t confirm');await expect(page.locator('#rsvp-fullName')).toHaveValue('Test Guest');await page.getByRole('button',{name:'Try Again'}).click();await expect(page.getByRole('status')).toContainText('Your reply is received');await expect(page.locator('#rsvp-fullName')).toBeDisabled();expect(keys).toHaveLength(2);expect(keys[0]).toBe(keys[1]);
 });
 
-test('editorial gallery supports arrows, swipe, focus trapping and Escape restoration; calendar stays all-day',async({page})=>{
+test('editorial gallery supports arrows, swipe, focus trapping and Escape restoration; calendar includes both civil wedding events',async({page})=>{
   await enter(page);const trigger=page.locator('#moments button').first();await trigger.click();const modal=page.getByRole('dialog');await expect(modal).toBeVisible();
   const original=await modal.locator('img').getAttribute('src');await page.keyboard.press('ArrowRight');await expect(modal.locator('img')).not.toHaveAttribute('src',original!);await modal.getByRole('button',{name:'Next photograph'}).click();
   const beforeSwipe=await modal.locator('img').getAttribute('src');await modal.locator('img').evaluate(element=>{const target=element.parentElement!;const touch=(x:number)=>new Touch({identifier:1,target,clientX:x,clientY:100});target.dispatchEvent(new TouchEvent('touchstart',{bubbles:true,changedTouches:[touch(220)]}));target.dispatchEvent(new TouchEvent('touchend',{bubbles:true,changedTouches:[touch(50)]}));});await expect(modal.locator('img')).not.toHaveAttribute('src',beforeSwipe!);
   await modal.getByRole('button',{name:'Close photograph'}).focus();await page.keyboard.press('Shift+Tab');await expect(modal.getByRole('button',{name:'Next photograph'})).toBeFocused();await page.keyboard.press('Escape');await expect(trigger).toBeFocused();
-  const download=page.waitForEvent('download');await page.getByRole('button',{name:/add to calendar/i}).click();const file=await download;expect(file.suggestedFilename()).toMatch(/\.ics$/);const calendar=await readFile((await file.path())!,'utf8');expect(calendar).toContain('DTSTART;VALUE=DATE:20261217');expect(calendar).not.toContain('DTSTART:');
+  const download=page.waitForEvent('download');await page.getByRole('button',{name:/add to calendar/i}).click();const file=await download;expect(file.suggestedFilename()).toMatch(/\.ics$/);const calendar=await readFile((await file.path())!,'utf8');expect(calendar).toContain('DTSTART:20261217T130000Z');expect(calendar).toContain('DTSTART:20261217T140000Z');expect(calendar.match(/BEGIN:VEVENT/g)).toHaveLength(2);
 });
 
 test('venue map is optional and keeps directions available when the provider fails',async({page})=>{
@@ -126,7 +161,7 @@ for(const viewport of viewports) {
     if(viewport.width<=800) { await page.getByRole('button',{name:'Open navigation'}).click();await page.getByRole('link',{name:'The venue',exact:true}).click();await expect(page.locator('#venue')).toBeInViewport();await expect(page.getByRole('button',{name:'Open navigation'})).toHaveAttribute('aria-expanded','false'); }
     await page.getByRole('radio',{name:'Joyfully accepts'}).check();await page.getByRole('radio',{name:'Yes',exact:true}).check();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     expect(await page.locator('label[for="rsvp-fullName"]').evaluate(el=>parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(16);
-    if(viewport.width<701) expect(await page.locator('#home picture img').evaluate((el:HTMLImageElement)=>el.currentSrc)).toContain('12.04.16');
+    if(viewport.width<701) expect(await page.locator('#home picture img').evaluate((el:HTMLImageElement)=>el.currentSrc)).toContain('couple.jpeg');
   });
 }
 

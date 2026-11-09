@@ -48,3 +48,9 @@ The missing asset is a host-approved, licensed wedding song, preferably an MP3 p
 The portrait embrace (`12.04.16 (1).jpeg`) is used as the mobile hero: its faces sit high enough to leave readable space for names, countdown and RSVP beneath them. The desktop hero uses `12.04.15.jpeg`. The couple introduction uses the full portrait beneath balloons (`12.04.21.jpeg`), with the `12.04.18.jpeg` selfie as the inset story/support image. The gallery contains four distinct entries: `12.04.16.jpeg`, `12.04.18.jpeg`, `12.04.21.jpeg`, and the original `couple.jpeg`. Each gallery source appears once. Reuse across hero/introduction/gallery is intentional, with five new photographs distributed throughout the page rather than one image everywhere.
 
 The hero uses an optimized `<picture>` with a portrait source below 700px, a shared descriptive alt for both compositions, eager/high-priority loading, and responsive Next.js source sets. It avoids preloading the desktop-only photograph on phones. Content/gallery photos use measured dimensions and natural heights; lower sections load lazily.
+
+## Current civil wedding update — 10 November 2026
+
+This update supersedes the earlier hero and audio recommendations above. The host specifically selected `public/images/couple.jpeg` for both desktop and mobile. The mobile photograph fades into the dark hero background so both faces and the copy stay legible. Other approved photographs remain in the introduction and gallery.
+
+The supplied `public/audio/perfect.mp3` (5,427,883 bytes) is a valid MPEG Layer III audio file and is configured as Perfect — Ed Sheeran. Native audio playback, pause and resume are checked in a real browser. No external music service is needed.

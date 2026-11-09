@@ -1,6 +1,6 @@
 # Shee Salamata & Don Vincent
 
-A new Enhanced Classic Royal Gusaba Wedding invitation, built with Next.js App Router, strict TypeScript, Tailwind CSS, Motion, Zod and Supabase. Thursday, **17 December 2026**, Kigali Serena Hotel, Africa/Kigali.
+An Enhanced Classic Royal Civil Wedding invitation, built with Next.js App Router, strict TypeScript, Tailwind CSS, Motion, Zod and Supabase. Thursday, **17 December 2026**: civil marriage at **City Hall, 3:00 PM**, followed by the reception at **Kigali Serena Hotel, 4:00 PM**, Africa/Kigali.
 
 ## Run locally
 
@@ -16,11 +16,13 @@ Open **http://127.0.0.1:3000**. The real couple photograph and fonts are local a
 
 ## Configure the wedding
 
+See [the current civil wedding update and verification](docs/CIVIL_WEDDING_UPDATE.md) for the latest behavior; it supersedes the historical redesign notes.
+
 Edit [`src/lib/wedding-config.ts`](src/lib/wedding-config.ts). It is the typed source of truth for names, date, venue, timezone, ceremony times, optional story/programme, photos, music and configuration status. Unconfirmed values are `null` or empty arrays.
 
-The full-background hero contains a live countdown to the beginning of 17 December in Africa/Kigali (16 December, 22:00 UTC). This is a provisional **date countdown**, not a ceremony start time; the interface labels the ceremony time unconfirmed. Set `startTime` to a confirmed `HH:mm` Kigali time to update it. `countdown.useDateBeginningWhenTimeUnknown` can disable the provisional target. The calendar remains an all-day event on 17 December, ending exclusively on 18 December, until both `startTime` and `endTime` are confirmed. Keep configuration status fields consistent with confirmed values.
+The hero uses the original `public/images/couple.jpeg` on both phones and desktop screens, with a dark graduated overlay for readable copy. Its countdown targets the confirmed civil marriage at 3:00 PM in Kigali (13:00 UTC) on 17 December. The itinerary includes the reception at 4:00 PM. The calendar download contains two correctly timed events with their own venues; no unconfirmed end time is invented. Every full page load or refresh presents the envelope again, and completing or skipping it returns to the hero.
 
-No dress code, family names, programme, guest deadline, relationship history or accommodation prices have been invented. Supply approved details before enabling the relevant sections. See [`docs/CLIENT_DETAILS_PENDING.md`](docs/CLIENT_DETAILS_PENDING.md).
+No dress code, family names, guest deadline, relationship history or accommodation prices have been invented. Supply approved details before enabling the relevant sections. See [`docs/CLIENT_DETAILS_PENDING.md`](docs/CLIENT_DETAILS_PENDING.md).
 
 ## Supabase setup
 
@@ -45,15 +47,15 @@ RSVP_NOTIFICATION_TO=
 RSVP_NOTIFICATION_RETRY_SECRET=
 ```
 
-No recipient has been assumed. Persistence completes before a notification is attempted. Failed notifications do not undo or duplicate RSVPs. A protected `POST /api/notifications/retry` with `Authorization: Bearer <RSVP_NOTIFICATION_RETRY_SECRET>` processes one eligible outbox job; invoke it from a trusted scheduler. Retries are bounded and use a stable provider idempotency key. Provider acceptance does not prove final inbox delivery. Schedule/review retries before production; no background scheduler is installed automatically.
+The host has confirmed the notification recipient privately. Store that address in the server-only `RSVP_NOTIFICATION_TO` environment variable; do not embed it in client-side configuration. Persistence completes before a notification is attempted. Failed notifications do not undo or duplicate RSVPs. A protected `POST /api/notifications/retry` with `Authorization: Bearer <RSVP_NOTIFICATION_RETRY_SECRET>` processes one eligible outbox job; invoke it from a trusted scheduler. Retries are bounded and use a stable provider idempotency key. Provider acceptance does not prove final inbox delivery. Schedule/review retries before production; no background scheduler is installed automatically.
 
 ## Photos and music
 
-Five newly supplied photographs are now used from `public/images/moments/`, alongside the original `public/images/couple.jpeg`. Original filenames and source files are preserved. `photography.hero` and `photography.mobileHero` choose responsive full-background images; `photography.couple` and `photography.story` select the introduction collage. The four-entry `photos` array drives the editorial gallery and accessible lightbox. Images keep their natural aspect ratio except deliberate hero background cropping. See [the complete visual asset inventory](docs/ASSET_INVENTORY.md).
+Five newly supplied photographs are now used from `public/images/moments/`, alongside the original `public/images/couple.jpeg`. Original filenames and source files are preserved. `photography.hero` and `photography.mobileHero` both use the approved `couple.jpeg`; `photography.couple` and `photography.story` select the introduction collage. The four-entry `photos` array drives the editorial gallery and accessible lightbox. Images keep their natural aspect ratio except deliberate hero background cropping. See [the complete visual asset inventory](docs/ASSET_INVENTORY.md).
 
 All nine original added photos remain unchanged in `client-assets/pending-review/`, outside the public web root and ignored by Git. Five suitable photographs were copied with identical content and original filenames into the invitation; unrelated or sensitive compositions are not included. Add future approved photographs to configuration without duplicating gallery entries.
 
-No MP3, WAV, OGG, M4A, AAC, FLAC, Opus or other audio asset was found. Place the approved wedding song in `public/audio/` (for example `public/audio/wedding-song.mp3`) and set `music.src` to its public path and `music.title` to the approved title. The path is an example, not an existing song. The player stays hidden until configured. Opening the envelope requests playback synchronously from that click/tap/key interaction, preserving the browser user gesture; page load and Skip do not start playback. Rejected playback shows a manual retry control. The single audio instance follows real play/pause/error events and stays mounted while scrolling. It hides while a form field has focus to keep typing clear.
+The supplied `public/audio/perfect.mp3` is connected as **Perfect — Ed Sheeran**. The floating play/pause control includes the track title. Opening the envelope requests playback synchronously from that click/tap/key interaction, preserving the browser user gesture; page load and Skip do not start playback. Rejected playback shows a manual retry control. The single audio instance follows real play/pause/error events and stays mounted while scrolling. It hides while a form field has focus to keep typing clear.
 
 ## WhatsApp and sharing
 
@@ -109,7 +111,7 @@ supabase/migrations/         Private tables, constraints and atomic RPCs
 tests/                       Unit, API and browser verification
 docs/                        Requirements, design, animation, data and handoff
 public/images/               Original photograph and five added photographs
-public/audio/                Approved wedding song still required
+public/audio/                Supplied Perfect MP3
 ```
 
 ## Current guest experience
