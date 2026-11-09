@@ -6,8 +6,8 @@ The itinerary shows these two events only. The hero uses `couple.jpeg` on every 
 
 The host supplied `public/audio/perfect.mp3` and selected Perfect by Ed Sheeran. Its floating play/pause control is enabled; the envelope opening requests playback through a user gesture. Refresh always returns to a fresh envelope.
 
-The notification recipient was supplied privately. Configure it in the server-only `RSVP_NOTIFICATION_TO` variable, alongside the Resend key, verified sender, retry secret, Supabase credentials and rate-limit secret. A private scheduler must invoke the existing notification retry endpoint. No email credentials, database credentials or recipient address are included in the public client configuration.
+RSVP delivery is configured for the confirmed client inbox, nshimiye003@gmail.com, through FormSubmit. The developer's testing address and Resend/Supabase setup are removed. No API key or owned sender domain is required. The client must activate the form using the email triggered by the first submission from the live site, then confirm receipt of a second setup response. See [activation instructions](RSVP_AND_EMAIL.md).
 
-Still pending: RSVP deadline, host WhatsApp number, exact City Hall address if directions are needed, event end times, biography, extra family names, dress code, database/email provisioning and agreed data retention. Accommodation preferences remain planning requests, not bookings or price quotes.
+Still pending: client inbox activation and delivery check, RSVP deadline, host WhatsApp number if that optional action is desired, exact City Hall address if directions are needed, event end times, biography, extra family names, dress code and agreed email retention. WhatsApp is hidden while its number is absent. Accommodation preferences remain planning requests, not bookings or price quotes.
 
 The other approved photographs remain in the introduction collage and gallery. Unselected originals stay in ignored `client-assets/pending-review/` and are not publicly hosted.

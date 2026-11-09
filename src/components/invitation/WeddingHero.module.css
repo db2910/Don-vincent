@@ -1,9 +1,9 @@
 .hero { position: relative; min-height: 100svh; overflow: clip; color: var(--pearl); background: #30271f; isolation: isolate; }
-.photograph { position: absolute; inset: 0; z-index: -3; overflow: hidden; }
-.image { object-fit: cover; object-position: 50% 30%; transform: scale(1.12); }
-.shade { position: absolute; inset: 0; z-index: -2; background: linear-gradient(180deg,#20190e99 0%,#22190e10 18%,#21160f50 35%,#201710e8 54%,#1d160ffa 100%); }
+.photograph { position: absolute; top: 0; left: 50%; width: 100%; max-width: 1200px; height: clamp(600px,70svh,800px); transform: translateX(-50%); z-index: -3; overflow: hidden; mask-image: linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent); }
+.image { object-fit: cover; object-position: 50% 35%; }
+.shade { position: absolute; inset: 0; z-index: -2; background: linear-gradient(180deg,#20190e80 0px,#22190e08 140px,#21160f10 390px,#201710e8 620px,#1d160f 800px); }
 .frame { position: absolute; inset: 24px; border: 1px solid #e8d5b44d; z-index: -1; pointer-events: none; }
-.content { position: relative; width: min(1120px,calc(100% - 96px)); margin: auto; padding: clamp(420px,50svh,560px) 0 75px; text-align: center; }
+.content { position: relative; width: min(1120px,calc(100% - 96px)); margin: auto; padding: clamp(560px,64svh,760px) 0 75px; text-align: center; }
 .overline { color: #f4e2c5; font-size: 14px; letter-spacing: 3px; }
 .invitation { font-size: 20px; margin: 8px auto 12px; max-width: 65ch; line-height: 1.5; }
 .names { display: flex; align-items: center; justify-content: center; gap: 24px; font-size: clamp(64px,6.1vw,90px); line-height: 1.15; margin: 8px 0 14px; outline: none; text-shadow: 0 3px 35px #21160f40; }
@@ -29,7 +29,7 @@
 @media(max-width:700px) {
   .hero { min-height: 100svh; }
   .photograph { bottom: auto; height: clamp(400px, 62svh, 560px); mask-image: linear-gradient(#000 0%, #000 58%, transparent 100%); }
-  .image { object-position: 53% 30%; }
+  .image { object-position: 53% 30%; transform: scale(1.12); }
   .shade { background: linear-gradient(180deg,#201710a8 0px,#2017100a 120px,#20171030 250px,#21180fe8 390px,#21180f 520px); }
   .frame { inset: 14px; border-color: #e8d5b438; }
   .content { width: calc(100% - 48px); padding: 365px 0 75px; }

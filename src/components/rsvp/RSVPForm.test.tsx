@@ -33,7 +33,7 @@ function stubResponse(body: object) {
 describe("RSVP guest journey", { timeout: 15_000 }, () => {
   it("shows one continuous form and links accessible validation errors to the fields", async () => {
     const user = userEvent.setup();
-    render(<RSVPForm previewMode whatsappNumber={null} />);
+    render(<RSVPForm whatsappNumber={null} />);
     expect(screen.queryByRole("button", { name: /Continue|Back/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("group", { name: /Will you need accommodation/ })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /Send My RSVP/ }));
@@ -46,39 +46,36 @@ describe("RSVP guest journey", { timeout: 15_000 }, () => {
     expect(screen.getByLabelText(/Full name/)).toHaveFocus();
   });
 
-  it("skips accommodation for a decline and clearly identifies unpersisted preview replies", async () => {
+  it("submits a decline without accommodation or unavailable WhatsApp actions", async () => {
     const user = userEvent.setup();
-    const fetchMock = stubResponse({ mode: "preview", stored: false });
-    render(<RSVPForm previewMode whatsappNumber={null} />);
+    const fetchMock = stubResponse({ submitted: true, reference: "decline-reference" });
+    render(<RSVPForm whatsappNumber={null} />);
     await guest(user, "Regretfully declines");
     expect(screen.getByLabelText(/A message for the couple/)).toBeInTheDocument();
     expect(screen.queryByRole("group", { name: /Will you need accommodation/ })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "RSVP via WhatsApp" })).toBeDisabled();
-    expect(screen.getByText(/once the hosts add their contact number/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "RSVP via WhatsApp" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/RSVP preview|once the hosts add their contact number/)).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /Send My RSVP/ }));
-    await screen.findByText("Preview complete");
-    expect(screen.getByLabelText(/Full name/)).toBeEnabled();
+    await screen.findByText("Your reply has been submitted");
+    expect(screen.getByLabelText(/Full name/)).toBeDisabled();
     expect(screen.getByLabelText(/Full name/)).toHaveValue("A Guest");
-    expect(screen.getByRole("status")).toHaveTextContent("has not been stored or emailed");
     const options = fetchMock.mock.calls[0][1];
     const payload = JSON.parse(options.body);
     expect(payload).toMatchObject({ attendanceStatus: "declined", accommodationStatus: "not_applicable", budgetAmount: null, nights: null, roomOccupants: null });
     expect(options.headers["Idempotency-Key"]).toMatch(/^[a-f\d-]{36}$/i);
-    await user.type(screen.getByLabelText(/A message for the couple/), "With love");
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
   it.each(["No, I have my own arrangements", "I'm not sure yet"])("does not require stay preferences for %s", async (choice) => {
     const user = userEvent.setup();
-    const fetchMock = stubResponse({ stored: true, id: "test-rsvp-id" });
-    render(<RSVPForm previewMode={false} whatsappNumber={null} />);
+    const fetchMock = stubResponse({ submitted: true, reference: "test-rsvp-reference" });
+    render(<RSVPForm whatsappNumber={null} />);
     await guest(user);
     await user.click(screen.getByLabelText("Yes"));
     await user.type(screen.getByLabelText(/Budget per room per night/), "120");
     await user.click(screen.getByLabelText(choice));
     expect(screen.queryByLabelText(/Budget per room per night/)).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /Send My RSVP/ }));
-    await screen.findByText("Your reply is received");
+    await screen.findByText("Your reply has been submitted");
     const payload = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(payload.accommodationStatus).toBe(choice.startsWith("No,") ? "no" : "unsure");
     expect(payload.budgetAmount).toBeNull();
@@ -86,10 +83,10 @@ describe("RSVP guest journey", { timeout: 15_000 }, () => {
     expect(payload.roomOccupants).toBeNull();
   });
 
-  it("reveals preferences inline, preserves them when toggled, and confirms storage without replacing the form", async () => {
+  it("reveals preferences inline, preserves them when toggled, and confirms submission without replacing the form", async () => {
     const user = userEvent.setup();
-    const fetchMock = stubResponse({ stored: true, id: "test-rsvp-id" });
-    render(<RSVPForm previewMode={false} whatsappNumber="+250 788 000 000" />);
+    const fetchMock = stubResponse({ submitted: true, reference: "test-rsvp-reference" });
+    render(<RSVPForm whatsappNumber="+250 788 000 000" />);
     await guest(user);
     await stay(user);
     await user.click(screen.getByLabelText("No, I have my own arrangements"));
@@ -107,21 +104,32 @@ describe("RSVP guest journey", { timeout: 15_000 }, () => {
     expect(decodeURIComponent(whatsapp.getAttribute("href")!)).toContain("Budget / room / night: RWF 180,000");
     expect(fetchMock).not.toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: /Send My RSVP/ }));
-    await screen.findByText("Your reply is received");
-    expect(screen.getByRole("status")).toHaveTextContent("Your RSVP has been saved");
+    await screen.findByText("Your reply has been submitted");
+    expect(screen.getByRole("status")).toHaveTextContent("Thank you for replying");
     expect(screen.getByRole("status")).toHaveTextContent("No accommodation has been booked");
     expect(screen.getByLabelText(/Full name/)).toBeDisabled();
     expect(screen.getByLabelText(/Budget per room per night/)).toHaveValue(180000);
     expect(screen.getByRole("button", { name: /RSVP sent/ })).toBeDisabled();
     fireEvent.submit(screen.getByRole("form", { name: "Wedding RSVP" }));
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    await user.click(screen.getByText("View your saved reply"));
+    await user.click(screen.getByText("View your submitted reply"));
     expect(screen.getByText("RWF 180,000")).toBeVisible();
+  });
+
+  it("does not mistake an old preview response for a real submission", async () => {
+    const user = userEvent.setup();
+    stubResponse({ mode: "preview", sent: false });
+    render(<RSVPForm whatsappNumber={null} />);
+    await guest(user, "Regretfully declines");
+    await user.click(screen.getByRole("button", { name: /Send My RSVP/ }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("couldn’t confirm your RSVP");
+    expect(screen.queryByText("Preview complete")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Full name/)).toBeEnabled();
   });
 
   it("rejects zero budget and fractional nights and occupants", async () => {
     const user = userEvent.setup();
-    render(<RSVPForm previewMode whatsappNumber={null} />);
+    render(<RSVPForm whatsappNumber={null} />);
     await guest(user);
     await user.click(screen.getByLabelText("Yes"));
     fireEvent.change(screen.getByLabelText(/Budget per room per night/), { target: { value: "0" } });
@@ -141,7 +149,7 @@ describe("RSVP guest journey", { timeout: 15_000 }, () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn().mockRejectedValue(new Error("offline"));
     vi.stubGlobal("fetch", fetchMock);
-    render(<RSVPForm previewMode={false} whatsappNumber={null} />);
+    render(<RSVPForm whatsappNumber={null} />);
     await guest(user, "Regretfully declines");
     await user.click(screen.getByRole("button", { name: /Send My RSVP/ }));
     await screen.findByRole("button", { name: /Try Again/ });
@@ -155,21 +163,21 @@ describe("RSVP guest journey", { timeout: 15_000 }, () => {
     expect(fetchMock.mock.calls[2][1].headers["Idempotency-Key"]).not.toBe(fetchMock.mock.calls[1][1].headers["Idempotency-Key"]);
   });
 
-  it("does not show success without a confirmed persisted record", async () => {
+  it("does not show success without a confirmed submission", async () => {
     const user = userEvent.setup();
-    stubResponse({ stored: false });
-    render(<RSVPForm previewMode={false} whatsappNumber={null} />);
+    stubResponse({ sent: false });
+    render(<RSVPForm whatsappNumber={null} />);
     await guest(user, "Regretfully declines");
     await user.click(screen.getByRole("button", { name: /Send My RSVP/ }));
     expect(await screen.findByRole("alert")).toHaveTextContent("couldn’t confirm your RSVP");
-    expect(screen.queryByText("Your reply is received")).not.toBeInTheDocument();
+    expect(screen.queryByText("Your reply has been submitted")).not.toBeInTheDocument();
   });
 
   it("retains the reply and handles unavailable secure randomness without sending", async () => {
     const user = userEvent.setup();
-    const fetchMock = stubResponse({ stored: true, id: "test-rsvp-id" });
+    const fetchMock = stubResponse({ submitted: true, reference: "test-rsvp-reference" });
     vi.spyOn(crypto, "randomUUID").mockImplementationOnce(() => { throw new Error("unavailable"); });
-    render(<RSVPForm previewMode={false} whatsappNumber={null} />);
+    render(<RSVPForm whatsappNumber={null} />);
     await guest(user, "Regretfully declines");
     await user.click(screen.getByRole("button", { name: /Send My RSVP/ }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Your details are still here");

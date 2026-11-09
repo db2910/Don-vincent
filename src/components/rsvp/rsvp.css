@@ -11,8 +11,6 @@
 .rsvp-paper:after{right:8px;bottom:8px;border-right:1px solid;border-bottom:1px solid}
 .rsvp-form-introduction{font-size:17px;line-height:1.8;color:#685644;margin:0 0 32px;padding-bottom:24px;border-bottom:1px solid #c4a46a50}
 .rsvp-form-fields{padding:0;margin:0;border:0;min-width:0}
-.rsvp-preview-note{padding:14px 18px;border-left:2px solid #a08350;background:#f4eee4;color:#594834;font-size:15px;line-height:1.7;margin:0 0 32px}
-.rsvp-preview-note strong{font-weight:600}
 .rsvp-field{margin-bottom:30px;min-width:0}
 .rsvp-field>label,.rsvp-choice-group legend{font-size:18px;line-height:1.6;font-weight:500;display:block;margin-bottom:12px;color:var(--ink,#493a2f)}
 .rsvp-required{color:#806039;margin-left:2px}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useAnimate, useReducedMotion, type AnimationSequence, type Timeline } from "motion/react";
 import { ArrowUpRight } from "lucide-react";
 import { INVITATION_REVEALED_EVENT, requestInvitationMusic } from "@/lib/music";
@@ -16,8 +16,10 @@ export type EnvelopeState = "idle" | "opening" | "revealing-card" | "card-visibl
 // All cues belong to this single timeline. The paper's travel is a percentage of
 // its own fixed, responsive size, so resizing never depends on moving bounds.
 const CUES = { sealReleased: .38, flapOpen: 1.1, paperVisible: 2.25, transition: 3.35, completed: 4.05 };
+const subscribeToHydration = () => () => {};
 
-export default function EnvelopeExperience() {
+export default function EnvelopeExperience({ children }: { children?: ReactNode }) {
+  const hydrated = useSyncExternalStore(subscribeToHydration, () => true, () => false);
   const [state, setState] = useState<EnvelopeState>("idle");
   const [scope, animate] = useAnimate<HTMLDivElement>();
   const dialog = useRef<HTMLDialogElement>(null);
@@ -51,19 +53,22 @@ export default function EnvelopeExperience() {
     stopTimeline();
     opening.current = false;
     updateState("completed");
-    dialog.current?.close();
-    unlock();
     // Every opening starts the invitation at its hero, including footer replays.
     window.history.replaceState(window.history.state, "", "#home");
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    dialog.current?.close();
+    unlock();
     document.getElementById("couple-names")?.focus({ preventScroll: true });
     window.dispatchEvent(new Event(INVITATION_REVEALED_EVENT));
   }, [stopTimeline, unlock, updateState]);
 
   const showEnvelope = useCallback(() => {
     const modal = dialog.current;
-    if (!modal || modal.open) return;
+    if (!modal || phase.current === "completed" || modal.matches(":modal")) return;
     try {
+      // SSR paints the fixed envelope immediately. Upgrade it to a native modal
+      // synchronously; showModal cannot upgrade an already-open dialog.
+      if (modal.open) modal.close();
       modal.showModal();
       overflowBeforeOpen.current = document.body.style.overflow;
       document.body.style.overflow = "hidden";
@@ -86,10 +91,10 @@ export default function EnvelopeExperience() {
   }, [showEnvelope, stopTimeline, unlock]);
 
   useEffect(() => {
-    if (state === "idle" && dialog.current?.open) {
+    if (hydrated && state === "idle" && dialog.current?.open) {
       dialog.current.querySelector<HTMLButtonElement>(".envelope-open")?.focus();
     }
-  }, [state]);
+  }, [state, hydrated]);
 
   async function open() {
     // A synchronous guard also covers two activations in the same React frame.
@@ -142,10 +147,11 @@ export default function EnvelopeExperience() {
   const invitationWeekday = new Intl.DateTimeFormat("en-GB", { weekday: "long", timeZone: weddingConfig.timezone }).format(new Date(`${weddingConfig.date}T12:00:00Z`));
 
   return <>
-    <dialog ref={dialog} className={`${styles.dialog} envelope-dialog`} aria-labelledby="envelope-heading" aria-describedby="envelope-instruction" onCancel={event => { event.preventDefault(); complete(); }} data-state={state}>
+    <noscript><style>{`.envelope-dialog { display: none !important; } body { overflow: auto !important; }`}</style></noscript>
+    <dialog open={state !== "completed"} ref={dialog} className={`${styles.dialog} envelope-dialog`} aria-labelledby="envelope-heading" aria-describedby="envelope-instruction" onCancel={event => { event.preventDefault(); complete(); }} data-state={state}>
       <div ref={scope} className={styles.stage}>
         <FallingHearts variant="envelope" />
-        <button type="button" className={styles.skip} onClick={complete}>Skip introduction <ArrowUpRight size={16} aria-hidden="true" /></button>
+        <button type="button" className={styles.skip} disabled={!hydrated} onClick={complete}>Skip introduction <ArrowUpRight size={16} aria-hidden="true" /></button>
         <div className={styles.content} data-envelope-animated>
           <p className={`eyebrow ${styles.overline}`}>A celebration of love & family</p>
           <div className={styles.scene}>
@@ -158,7 +164,7 @@ export default function EnvelopeExperience() {
               <div className={styles.pocket} aria-hidden="true" />
               <div className={`${styles.fold} ${styles.foldLeft}`} aria-hidden="true" />
               <div className={`${styles.fold} ${styles.foldRight}`} aria-hidden="true" />
-              <button className={`${styles.open} envelope-open`} type="button" aria-label="Open your invitation" disabled={state !== "idle"} onClick={open}>
+              <button className={`${styles.open} envelope-open`} type="button" aria-label="Open your invitation" disabled={!hydrated || state !== "idle"} onClick={open}>
                 <WaxSeal />
               </button>
             </div>
@@ -172,6 +178,7 @@ export default function EnvelopeExperience() {
         <span className={styles.status} role="status">{state === "opening" ? "Opening your envelope" : state === "revealing-card" ? "Revealing your invitation" : state === "card-visible" ? `${weddingConfig.names.combined} invite you to celebrate on ${invitationDate}` : ""}</span>
       </div>
     </dialog>
+    {children}
     <button className={styles.replay} type="button" onClick={replay}>Open the envelope again <ArrowUpRight size={15} aria-hidden="true" /></button>
   </>;
 }

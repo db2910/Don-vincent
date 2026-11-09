@@ -20,8 +20,8 @@ type FormValues = {
   website: string;
 };
 type Errors = Record<string, string>;
-type SubmitState = "idle" | "validating" | "submitting" | "success" | "preview" | "error";
-type Props = { previewMode: boolean; whatsappNumber: string | null; deadline?: string | null };
+type SubmitState = "idle" | "validating" | "submitting" | "success" | "error";
+type Props = { whatsappNumber: string | null; deadline?: string | null };
 
 const initialValues: FormValues = {
   fullName: "", contact: "", attendanceStatus: "", accommodationStatus: "",
@@ -114,7 +114,7 @@ function Review({ payload }: { payload: RSVPPayload }) {
   </dl>;
 }
 
-export default function RSVPForm({ previewMode, whatsappNumber, deadline }: Props) {
+export default function RSVPForm({ whatsappNumber, deadline }: Props) {
   const [values, setValues] = useState<FormValues>(initialValues);
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<SubmitState>("idle");
@@ -126,7 +126,7 @@ export default function RSVPForm({ previewMode, whatsappNumber, deadline }: Prop
   const inFlight = useRef(false);
   const submission = useRef<{ fingerprint: string; key: string } | null>(null);
   const attending = values.attendanceStatus === "accepted";
-  const saved = status === "success";
+  const sent = status === "success";
   const busy = status === "submitting" || status === "validating";
   const parsedPayload = rsvpSchema.safeParse(payloadFrom(values));
   const validPayload = parsedPayload.success ? parsedPayload.data : null;
@@ -146,7 +146,7 @@ export default function RSVPForm({ previewMode, whatsappNumber, deadline }: Prop
     });
     setSubmitError("");
     setWhatsappOpened(false);
-    if (status === "error" || status === "preview") {
+    if (status === "error") {
       setStatus("idle");
       setConfirmed(null);
     }
@@ -164,7 +164,7 @@ export default function RSVPForm({ previewMode, whatsappNumber, deadline }: Prop
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (inFlight.current || status === "success") return;
+    if (inFlight.current || sent) return;
     setStatus("validating");
     const result = rsvpSchema.safeParse(payloadFrom(values));
     if (!result.success) {
@@ -188,17 +188,11 @@ export default function RSVPForm({ previewMode, whatsappNumber, deadline }: Prop
         signal: AbortSignal.timeout(30_000),
       });
       const responseData: unknown = await response.json();
-      const data = responseData as { stored?: boolean; mode?: string; id?: string } | null;
+      const data = responseData as { submitted?: boolean; reference?: string } | null;
       if (!response.ok) throw new Error(response.status === 429 ? "rate_limit" : "request_failed");
-      if (data?.stored === true && typeof data.id === "string" && data.id.length > 0) {
-        setConfirmed(result.data);
-        setStatus("success");
-      } else if (data?.mode === "preview" && data.stored === false) {
-        setConfirmed(result.data);
-        setStatus("preview");
-      } else {
-        throw new Error("unconfirmed_response");
-      }
+      if (data?.submitted !== true || typeof data.reference !== "string" || !data.reference.trim()) throw new Error("unconfirmed_response");
+      setConfirmed(result.data);
+      setStatus("success");
       requestAnimationFrame(() => resultRef.current?.focus());
     } catch (error) {
       setStatus("error");
@@ -228,15 +222,13 @@ export default function RSVPForm({ previewMode, whatsappNumber, deadline }: Prop
     </div>
     <div className="rsvp-paper">
       <p className="rsvp-form-introduction">A personal reply, with love. Fields marked <span className="rsvp-required">*</span> are required.</p>
-      {previewMode && <p className="rsvp-preview-note"><strong>RSVP preview</strong> · You can explore this form. Responses are not stored or emailed in preview mode.</p>}
       <noscript><p className="rsvp-note">Please enable JavaScript to reply online. You can still view all the wedding details above.</p></noscript>
       <form method="post" action="/api/rsvp" noValidate onSubmit={handleSubmit} aria-busy={busy} aria-label="Wedding RSVP">
         {(Object.keys(errors).length > 0 || submitError) && <div className="rsvp-error-summary" ref={errorRef} tabIndex={-1} role="alert">
           {submitError || "Please check the highlighted details below."}
           {Object.keys(errors).length > 0 && <ul>{Object.entries(errors).map(([name, message]) => <li key={name}><a href={`#rsvp-${name}`} onClick={(event) => { event.preventDefault(); document.getElementById(`rsvp-${name}`)?.focus(); }}>{message}</a></li>)}</ul>}
         </div>}
-        <fieldset className="rsvp-form-fields" disabled={busy || saved}>
-          <legend className="rsvp-sr-only">Your RSVP details</legend>
+        <fieldset className="rsvp-form-fields" aria-label="Your RSVP details" disabled={busy || sent}>
           <div className="rsvp-honeypot" aria-hidden="true"><label htmlFor="rsvp-website">Leave this field empty</label><input id="rsvp-website" name="website" autoComplete="off" tabIndex={-1} value={values.website} onChange={(event) => change("website", event.target.value)} /></div>
           <div className="rsvp-field"><label htmlFor="rsvp-fullName">Full name <span className="rsvp-required">*</span></label><input id="rsvp-fullName" name="fullName" autoComplete="name" maxLength={100} value={values.fullName} onChange={(event) => change("fullName", event.target.value)} required aria-invalid={!!errors.fullName} aria-describedby={errors.fullName ? "rsvp-fullName-error" : undefined} /><ErrorText name="fullName" errors={errors} /></div>
           <div className="rsvp-field"><label htmlFor="rsvp-contact">Phone or email <span className="rsvp-required">*</span></label><input id="rsvp-contact" name="contact" type="text" autoComplete="off" maxLength={160} value={values.contact} onChange={(event) => change("contact", event.target.value)} required aria-invalid={!!errors.contact} aria-describedby={`rsvp-contact-hint${errors.contact ? " rsvp-contact-error" : ""}`} /><p className="rsvp-field-hint" id="rsvp-contact-hint">For a phone number, please include your country code.</p><ErrorText name="contact" errors={errors} /></div>
@@ -257,26 +249,24 @@ export default function RSVPForm({ previewMode, whatsappNumber, deadline }: Prop
           <div className="rsvp-message rsvp-field"><label htmlFor="rsvp-guestMessage">A message for the couple <span className="rsvp-optional">(optional)</span></label><textarea id="rsvp-guestMessage" name="guestMessage" rows={4} maxLength={1200} value={values.guestMessage} onChange={(event) => change("guestMessage", event.target.value)} aria-invalid={!!errors.guestMessage} aria-describedby={errors.guestMessage ? "rsvp-guestMessage-error" : undefined} /><ErrorText name="guestMessage" errors={errors} /></div>
           <p className="rsvp-privacy">Your contact details and accommodation preferences are shared privately with the wedding hosts to help plan the celebration. Accommodation preferences do not reserve a room.</p>
           <div className="rsvp-actions">
-            <button type="submit" className="button rsvp-send" disabled={busy || saved}>{saved ? "RSVP sent" : status === "submitting" ? "Sending your reply…" : status === "validating" ? "Checking your reply…" : status === "error" ? "Try Again" : "Send My RSVP"}<span aria-hidden="true">♡</span></button>
+            <button type="submit" className="button rsvp-send" disabled={busy || sent}>{sent ? "RSVP sent" : status === "submitting" ? "Sending your reply…" : status === "validating" ? "Checking your reply…" : status === "error" ? "Try Again" : "Send My RSVP"}<span aria-hidden="true">♡</span></button>
           </div>
         </fieldset>
-        {(status === "success" || status === "preview") && <div className={`rsvp-confirmation${status === "preview" ? " is-preview" : ""}`} ref={resultRef} tabIndex={-1} role="status">
-          <span className="rsvp-confirmation-mark" aria-hidden="true">{status === "success" ? "✓" : "✧"}</span>
+        {sent && <div className="rsvp-confirmation" ref={resultRef} tabIndex={-1} role="status">
+          <span className="rsvp-confirmation-mark" aria-hidden="true">✓</span>
           <div>
-            <p className="rsvp-confirmation-heading">{status === "preview" ? "Preview complete" : "Your reply is received"}</p>
-            <p>{status === "preview"
-              ? "This is a preview. Your response has not been stored or emailed. You can continue to edit your reply."
-              : confirmed?.attendanceStatus === "declined"
-                ? "Thank you for letting us know. Your RSVP has been saved, and we’ll keep you close in our hearts."
-                : "Your RSVP has been saved. We can’t wait to celebrate with you in Kigali."}</p>
+            <p className="rsvp-confirmation-heading">Your reply has been submitted</p>
+            <p>{confirmed?.attendanceStatus === "declined"
+              ? "Thank you for letting us know. We’ll keep you close in our hearts."
+              : "Thank you for replying. We can’t wait to celebrate with you in Kigali."}</p>
             {confirmed?.accommodationStatus === "yes" && <p>Your stay preferences are for planning only. No accommodation has been booked.</p>}
           </div>
         </div>}
-        {confirmed && (status === "success" || status === "preview") && <details className="rsvp-response-details"><summary>{status === "preview" ? "Review your preview reply" : "View your saved reply"}</summary><Review payload={confirmed} /></details>}
-        <div className="rsvp-whatsapp">
-          {whatsappReady && validPayload ? <a className="rsvp-whatsapp-link" href={`https://wa.me/${whatsappDigits}?text=${encodeURIComponent(whatsappText)}`} target="_blank" rel="noopener noreferrer" onClick={() => setWhatsappOpened(true)}>RSVP via WhatsApp <span aria-hidden="true">↗</span></a> : <button className="rsvp-whatsapp-link" type="button" disabled>RSVP via WhatsApp</button>}
-          <p>{!whatsappReady ? "WhatsApp RSVP will be available once the hosts add their contact number." : !validPayload ? "Complete your details to prepare a WhatsApp message." : whatsappOpened ? "Your message has been prepared. Send it in WhatsApp to reach the hosts. Opening WhatsApp does not save this form." : "Prefer a personal message? Send your prepared reply to the hosts. Opening WhatsApp does not save this form."}</p>
-        </div>
+        {confirmed && sent && <details className="rsvp-response-details"><summary>View your submitted reply</summary><Review payload={confirmed} /></details>}
+        {whatsappReady && <div className="rsvp-whatsapp">
+          {validPayload ? <a className="rsvp-whatsapp-link" href={`https://wa.me/${whatsappDigits}?text=${encodeURIComponent(whatsappText)}`} target="_blank" rel="noopener noreferrer" onClick={() => setWhatsappOpened(true)}>RSVP via WhatsApp <span aria-hidden="true">↗</span></a> : <button className="rsvp-whatsapp-link" type="button" disabled>RSVP via WhatsApp</button>}
+          <p>{!validPayload ? "Complete your details to prepare a WhatsApp message." : whatsappOpened ? "Your message has been prepared. Send it in WhatsApp to reach the hosts. Opening WhatsApp does not send this form." : "Prefer a personal message? Send your prepared reply to the hosts. Opening WhatsApp does not send this form."}</p>
+        </div>}
       </form>
     </div>
     <p className="rsvp-signature">With love, Shee Salamata &amp; Don Vincent</p>

@@ -1,69 +1,66 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-const { rpc, dbMock } = vi.hoisted(() => ({ rpc: vi.fn(), dbMock: vi.fn() }));
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/supabase/server", () => ({ getSupabaseAdmin: dbMock }));
-import { sendPendingNotification } from "@/lib/notifications/rsvp";
-import { POST as retry } from "@/app/api/notifications/retry/route";
-const job = {
-  id: "outbox-id", rsvp_id: "rsvp-id", claim_attempt: 1, full_name: "Guest", contact: "guest@example.test", attendance_status: "accepted", accommodation_status: "yes",
-  budget_currency: "USD", budget_amount: 125, nights: 2, breakfast_preference: "breakfast", accommodation_type: "hotel", sharing_preference: "private", room_occupants: 2, guest_message: "See you there!",
-};
+import { rsvpSchema } from "@/lib/validation/rsvp";
+const payload = rsvpSchema.parse({ fullName: "Guest", contact: "guest@example.test", attendanceStatus: "accepted", accommodationStatus: "yes", budgetCurrency: "USD", budgetAmount: 125, nights: 2, breakfastPreference: "breakfast", accommodationType: "hotel", sharingPreference: "private", roomOccupants: 2, guestMessage: "See you there!" });
 const fetchMock = vi.fn();
-
-beforeEach(() => {
-  vi.clearAllMocks();
-  vi.stubGlobal("fetch", fetchMock);
-  vi.stubEnv("RESEND_API_KEY", "test-only");
-  vi.stubEnv("RSVP_NOTIFICATION_FROM", "host@example.test");
-  vi.stubEnv("RSVP_NOTIFICATION_TO", "host@example.test");
-  vi.stubEnv("RSVP_NOTIFICATION_RETRY_SECRET", "test-retry-secret");
-  dbMock.mockReturnValue({ rpc });
-  rpc.mockImplementation((name: string) => Promise.resolve({ data: name === "claim_rsvp_notification" ? [job] : null, error: null }));
+let service: typeof import("@/lib/notifications/formsubmit");
+const formUrl = "https://invitation.example/#rsvp";
+beforeEach(async () => {
+  vi.resetModules(); vi.clearAllMocks(); vi.stubGlobal("fetch", fetchMock);
+  vi.stubEnv("FORMSUBMIT_RECIPIENT", "client@example.test");
+  service = await import("@/lib/notifications/formsubmit");
 });
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
-
-describe("queued notifications", () => {
-  it("sends only a claimed job with a stable provider idempotency key", async () => {
-    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ id: "provider-message-id" }) });
-    expect(await sendPendingNotification("rsvp-id")).toBe(true);
-    expect(fetchMock).toHaveBeenCalledWith("https://api.resend.com/emails", expect.objectContaining({ headers: expect.objectContaining({ "Idempotency-Key": "wedding-rsvp-rsvp-id" }) }));
-    const email = JSON.parse(fetchMock.mock.calls[0][1].body);
-    expect(email.text).toContain("Budget per room per night: USD 125");
-    expect(email.text).toContain("See you there!");
-    expect(rpc).toHaveBeenLastCalledWith("finish_rsvp_notification", { p_id: "outbox-id", p_attempt: 1, p_accepted: true });
+describe("FormSubmit delivery", () => {
+  it("sends only to the configured recipient with readable labels and the table template", async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ success: "true" }) });
+    expect(await service.sendFormSubmit(payload, "reply-id", service.getFormSubmitDestination()!, formUrl)).toEqual({ accepted: true });
+    expect(fetchMock.mock.calls[0][0]).toBe("https://formsubmit.co/ajax/client%40example.test");
+    const options = fetchMock.mock.calls[0][1]; const fields = JSON.parse(options.body);
+    expect(options.headers.Referer).toBe(formUrl);
+    expect(fields).toMatchObject({ _template: "table", _url: formUrl, Guest: "Guest", Attendance: "Joyfully accepts", "Budget per room per night": "USD 125", "Room sharing": "Private room", Reference: "reply-id", email: "guest@example.test" });
+    expect(fields._subject).toContain("Shee Salamata & Don Vincent");
+    expect(fields).not.toHaveProperty("_cc"); expect(fields).not.toHaveProperty("_autoresponse");
   });
-
-  it("keeps failed deliveries retryable without submitting another RSVP", async () => {
-    fetchMock.mockRejectedValue(new Error("network timeout"));
-    expect(await sendPendingNotification()).toBe(false);
-    expect(rpc).toHaveBeenLastCalledWith("finish_rsvp_notification", { p_id: "outbox-id", p_attempt: 1, p_accepted: false });
-    expect(rpc.mock.calls.map(([name]) => name)).toEqual(["claim_rsvp_notification", "finish_rsvp_notification"]);
+  it("coalesces concurrent identical submissions on the same instance", async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
+    const replies = await Promise.all([service.sendFormSubmit(payload, "same-key", "client@example.test", formUrl), service.sendFormSubmit(payload, "same-key", "client@example.test", formUrl)]);
+    expect(replies).toEqual([{ accepted: true }, { accepted: true }]); expect(fetchMock).toHaveBeenCalledTimes(1);
   });
-
-  it("does not send without configuration or an eligible claim", async () => {
-    vi.stubEnv("RESEND_API_KEY", "");
-    expect(await sendPendingNotification()).toBe(false);
-    expect(rpc).not.toHaveBeenCalled();
-    vi.stubEnv("RESEND_API_KEY", "test-only");
-    rpc.mockResolvedValue({ data: [], error: null });
-    expect(await sendPendingNotification()).toBe(false);
-    expect(fetchMock).not.toHaveBeenCalled();
+  it("does not reuse an accepted key for changed details", async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
+    await service.sendFormSubmit(payload, "same-key", "client@example.test", formUrl);
+    expect(await service.sendFormSubmit({ ...payload, guestMessage: "Changed" }, "same-key", "client@example.test", formUrl)).toEqual({ accepted: false, status: 409 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
-
-  it("protects retry calls with a server-only bearer secret", async () => {
-    const response = await retry(new Request("http://localhost/api/notifications/retry", { method: "POST" }));
-    expect(response.status).toBe(401);
-    expect(rpc).not.toHaveBeenCalled();
-    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ id: "provider-message-id" }) });
-    const authorized = await retry(new Request("http://localhost/api/notifications/retry", { method: "POST", headers: { authorization: "Bearer test-retry-secret" } }));
-    expect(authorized.status).toBe(200);
-    expect(await authorized.json()).toEqual({ providerAccepted: true });
+  it("allows a retry after a provider failure instead of caching failure", async () => {
+    fetchMock.mockRejectedValueOnce(new Error("timeout")).mockResolvedValueOnce({ ok: true, json: async () => ({ success: true }) });
+    expect(await service.sendFormSubmit(payload, "retry-key", "client@example.test", formUrl)).toEqual({ accepted: false, status: 503 });
+    expect(await service.sendFormSubmit(payload, "retry-key", "client@example.test", formUrl)).toEqual({ accepted: true });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
-
-  it.each([{}, { id: "" }, { id: 123 }])("does not record provider acceptance for a malformed success body", async (body) => {
+  it.each([{}, { success: false }, { success: "false", message: "Activation required" }, { success: 1 }])("does not confirm an unsuccessful or malformed provider response %j", async body => {
     fetchMock.mockResolvedValue({ ok: true, json: async () => body });
-    expect(await sendPendingNotification()).toBe(false);
-    expect(rpc).toHaveBeenLastCalledWith("finish_rsvp_notification", { p_id: "outbox-id", p_attempt: 1, p_accepted: false });
+    expect(await service.sendFormSubmit(payload, "key", "client@example.test", formUrl)).toEqual({ accepted: false, status: 503 });
+  });
+  it.each([403, 429, 500])("does not report success for provider status %s", async status => {
+    fetchMock.mockResolvedValue({ ok: false, status });
+    expect(await service.sendFormSubmit(payload, "key", "client@example.test", formUrl)).toEqual({ accepted: false, status: status === 429 ? 429 : 503 });
+  });
+  it("has a default client destination without credentials, and rejects invalid overrides", () => {
+    vi.stubEnv("FORMSUBMIT_RECIPIENT", ""); expect(service.getFormSubmitDestination()).toMatch(/^[^@]+@gmail\.com$/);
+    vi.stubEnv("FORMSUBMIT_RECIPIENT", "https://untrusted.example"); expect(service.getFormSubmitDestination()).toBeNull();
+  });
+  it("omits inactive accommodation details and never treats a phone as Reply-To email", () => {
+    const decline = rsvpSchema.parse({ fullName: "Guest", contact: "+250 788 123 456", attendanceStatus: "declined", accommodationStatus: "not_applicable" });
+    const fields = service.buildFormSubmitFields(decline, "key", formUrl);
+    expect(fields.Attendance).toBe("Regretfully declines"); expect(fields).not.toHaveProperty("Accommodation");
+    expect(fields).not.toHaveProperty("email"); expect(fields["Message for the couple"]).toBe("No message provided.");
+  });
+  it("keeps guest text as data without allowing it to override delivery fields", () => {
+    const fields = service.buildFormSubmitFields({ ...payload, guestMessage: 'Love & joy, "_cc": "other@example.test"' }, "key", formUrl);
+    expect(fields._template).toBe("table"); expect(fields).not.toHaveProperty("_cc");
+    expect(fields["Message for the couple"]).toContain('"_cc"');
   });
 });

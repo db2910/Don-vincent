@@ -1,9 +1,8 @@
 import "server-only";
-import { createHash, createHmac } from "node:crypto";
 import { NextResponse } from "next/server";
 import { rsvpSchema } from "@/lib/validation/rsvp";
-import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { sendPendingNotification } from "@/lib/notifications/rsvp";
+import { getFormSubmitDestination, sendFormSubmit } from "@/lib/notifications/formsubmit";
+import { checkRsvpRateLimit } from "@/lib/notifications/rate-limit";
 
 export const runtime = "nodejs";
 const MAX_BODY_BYTES = 12_000;
@@ -53,13 +52,10 @@ export async function POST(request: Request) {
   }
   const parsed = rsvpSchema.safeParse(input);
   if (!parsed.success) return reply({ error: "Please check the form and try again." }, 400);
-  const { website, ...payload } = parsed.data;
-  if (website) return reply({ error: "This request could not be accepted." }, 400);
+  if (parsed.data.website) return reply({ error: "This request could not be accepted." }, 400);
 
-  const db = getSupabaseAdmin();
-  const rateSecret = process.env.RSVP_RATE_LIMIT_SECRET;
-  if (!db || !rateSecret) {
-    if (process.env.NODE_ENV !== "production") return reply({ mode: "preview", stored: false });
+  const destination = getFormSubmitDestination();
+  if (!destination) {
     return reply({ error: "RSVP is temporarily unavailable. Please try again later." }, 503);
   }
 
@@ -68,24 +64,14 @@ export async function POST(request: Request) {
   const ip = request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim()
     || request.headers.get("x-real-ip")?.trim()
     || "unknown";
-  const rateKey = createHmac("sha256", rateSecret).update(ip).digest("hex");
-  const payloadHash = createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+  const retryAfter = checkRsvpRateLimit(ip);
+  if (retryAfter) return reply({ error: "Too many attempts. Please try again shortly." }, 429, { "Retry-After": String(retryAfter) });
 
   try {
-    const { data, error } = await db.rpc("submit_wedding_rsvp", {
-      p_idempotency_key: key,
-      p_payload_hash: payloadHash,
-      p_rate_key: rateKey,
-      p_payload: payload,
-    });
-    if (error || !data) return reply({ error: "Your response could not be saved. Please try again." }, 503);
-    if (data.status === "rate_limited") return reply({ error: "Too many attempts. Please try again in an hour." }, 429, { "Retry-After": "3600" });
-    if (data.status === "conflict") return reply({ error: "This submission has already been used. Please start a new response." }, 409);
-    if (data.status !== "saved" || typeof data.id !== "string") return reply({ error: "Your response could not be saved. Please try again." }, 503);
-    // Awaiting keeps work alive in serverless runtimes. Failures remain queued.
-    await sendPendingNotification(data.id).catch(() => false);
-    return reply({ stored: true, id: data.id });
+    const result = await sendFormSubmit(parsed.data, key, destination, `${expectedOrigin}/#rsvp`);
+    if (result.accepted) return reply({ submitted: true, reference: key });
+    return reply({ error: "Your response could not be sent. Your details are still here; please try again." }, result.status, result.status === 429 ? { "Retry-After": "60" } : undefined);
   } catch {
-    return reply({ error: "Your response could not be saved. Please try again." }, 503);
+    return reply({ error: "Your response could not be sent. Please try again." }, 503);
   }
 }

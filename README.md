@@ -1,6 +1,6 @@
 # Shee Salamata & Don Vincent
 
-An Enhanced Classic Royal Civil Wedding invitation, built with Next.js App Router, strict TypeScript, Tailwind CSS, Motion, Zod and Supabase. Thursday, **17 December 2026**: civil marriage at **City Hall, 3:00 PM**, followed by the reception at **Kigali Serena Hotel, 4:00 PM**, Africa/Kigali.
+An Enhanced Classic Royal Civil Wedding invitation, built with Next.js App Router, strict TypeScript, Tailwind CSS, Motion, Zod and FormSubmit. Thursday, **17 December 2026**: civil marriage at **City Hall, 3:00 PM**, followed by the reception at **Kigali Serena Hotel, 4:00 PM**, Africa/Kigali.
 
 ## Run locally
 
@@ -12,11 +12,11 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open **http://127.0.0.1:3000**. The real couple photograph and fonts are local assets. No external service is required to view the invitation. With missing database credentials, development RSVP completes only an explicitly labeled preview: nothing is stored or emailed. Production fails safely with HTTP 503 when required configuration is absent.
+Open **http://127.0.0.1:3000**. The real couple photograph and fonts are local assets. No external service is required to view the invitation. FormSubmit is already configured for the client inbox; it requires the inbox owner to activate the form before guest responses can reach their email. No API key is required.
 
 ## Configure the wedding
 
-See [the current civil wedding update and verification](docs/CIVIL_WEDDING_UPDATE.md) for the latest behavior; it supersedes the historical redesign notes.
+See [the current hero, envelope and RSVP update](docs/HERO_AND_EMAIL_UPDATE.md) and [email setup](docs/RSVP_AND_EMAIL.md). Earlier redesign and civil-wedding reports describe previous implementations.
 
 Edit [`src/lib/wedding-config.ts`](src/lib/wedding-config.ts). It is the typed source of truth for names, date, venue, timezone, ceremony times, optional story/programme, photos, music and configuration status. Unconfirmed values are `null` or empty arrays.
 
@@ -24,30 +24,15 @@ The hero uses the original `public/images/couple.jpeg` on both phones and deskto
 
 No dress code, family names, guest deadline, relationship history or accommodation prices have been invented. Supply approved details before enabling the relevant sections. See [`docs/CLIENT_DETAILS_PENDING.md`](docs/CLIENT_DETAILS_PENDING.md).
 
-## Supabase setup
+## RSVP email setup
 
-1. Create a Supabase project owned by the hosts.
-2. Apply [`supabase/migrations/202611080001_wedding_rsvp.sql`](supabase/migrations/202611080001_wedding_rsvp.sql) with the Supabase SQL editor as database owner. For the CLI workflow, link the project and use `supabase db push`.
-3. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`. The service-role key must remain server-only.
-4. Generate a private rate-limit secret with `openssl rand -hex 32`; put it in `RSVP_RATE_LIMIT_SECRET`.
-5. Restart the development server. You are now using real persistence: only submit authorized guest responses or a controlled staging test.
+The form uses **FormSubmit**, configured on the server for **nshimiye003@gmail.com**. No API key, Resend account, owned sender domain or database is required. Both browser and server validate inputs; the server forwards attendance, contact, applicable accommodation preferences and the optional message. The notification uses FormSubmit's table template with the wedding subject. Confirmation remains inline on the invitation.
 
-The browser POSTs to `/api/rsvp`. Zod validates the request again on the server. A restricted PostgreSQL RPC atomically applies a distributed rate limit, verifies the idempotency key, saves the guest record, and creates an email outbox job. Anonymous and ordinary authenticated users cannot read or directly write guest records. No guest listing endpoint exists. View records through authorized Supabase administration.
+Before sharing with guests: submit one clearly labeled setup response from the deployed site, have the client click FormSubmit's activation link in their Gmail Inbox/Spam, then submit another setup response and confirm receipt. [Full activation instructions and data flow](docs/RSVP_AND_EMAIL.md).
 
-Run staging checks for migration installation, RLS, concurrent retries and rate limits before accepting real RSVPs. The included automated tests mock external services and never send test data to client systems. Architecture, notification retries and deletion steps are in [`docs/RSVP_AND_DATABASE.md`](docs/RSVP_AND_DATABASE.md).
+The recipient can be overridden with server-only `FORMSUBMIT_RECIPIENT`; no override is needed for the supplied client inbox. Production and development use the same real sending flow. Automated tests intercept submissions and do not send emails. The old preview banner, Resend setup and developer testing inbox are removed. WhatsApp is hidden until a valid host number is configured.
 
-## Email notifications
-
-Configure a verified Resend sender and host recipient:
-
-```dotenv
-RESEND_API_KEY=
-RSVP_NOTIFICATION_FROM=
-RSVP_NOTIFICATION_TO=
-RSVP_NOTIFICATION_RETRY_SECRET=
-```
-
-The host has confirmed the notification recipient privately. Store that address in the server-only `RSVP_NOTIFICATION_TO` environment variable; do not embed it in client-side configuration. Persistence completes before a notification is attempted. Failed notifications do not undo or duplicate RSVPs. A protected `POST /api/notifications/retry` with `Authorization: Bearer <RSVP_NOTIFICATION_RETRY_SECRET>` processes one eligible outbox job; invoke it from a trusted scheduler. Retries are bounded and use a stable provider idempotency key. Provider acceptance does not prove final inbox delivery. Schedule/review retries before production; no background scheduler is installed automatically.
+Provider acceptance does not prove inbox delivery. FormSubmit documents a 30-day archive; the website stores no separate guest database. Retry coalescing is per server instance and emails include a stable reference; there is no global exactly-once guarantee. See the setup document for details.
 
 ## Photos and music
 
@@ -59,7 +44,7 @@ The supplied `public/audio/perfect.mp3` is connected as **Perfect — Ed Sheeran
 
 ## WhatsApp and sharing
 
-Set `NEXT_PUBLIC_HOST_WHATSAPP` to the **verified** international host number (digits, including country code), then restart/rebuild. Until configured, the secondary WhatsApp action is disabled with an explanation. It prepares an encoded message from the reviewed response; opening it does not store the RSVP or prove the guest sent a message.
+Set `NEXT_PUBLIC_HOST_WHATSAPP` to the **verified** international host number (digits, including country code), then restart/rebuild. Until configured, the secondary WhatsApp action is hidden. It prepares an encoded message from the reviewed response; opening it does not store the RSVP or prove the guest sent a message.
 
 Set `NEXT_PUBLIC_BASE_URL` only when the actual deployment origin is known, such as the final HTTPS domain. It supplies canonical/social metadata and the server's allowed origin. In local development leave it blank to use the request origin. If set, it must match the browser's exact origin: `localhost` and `127.0.0.1` differ.
 
@@ -83,9 +68,9 @@ Current redesign results, changed files, screenshots and honest verification lim
 
 The root `vercel.json` explicitly selects Next.js, runs `npm run build`, and resets the output directory to the framework default. In Vercel, keep Root Directory at the repository root (blank), rather than `src` or `public`. Serving only `public` exposes images but leaves the homepage and API routes returning 404. Redeploy the latest `main` commit after changing project settings.
 
-Configure production environment variables in Vercel's project settings. Set the real `NEXT_PUBLIC_BASE_URL`, use the hosts' Supabase project, apply the migration first, and use the correct verified email/WhatsApp contacts.
+Configure production environment variables in Vercel's project settings. Set the real `NEXT_PUBLIC_BASE_URL`, optionally set the client recipient override, and provide the correct WhatsApp contact only if that secondary action is desired.
 
-Before launching: confirm pending client details; test database/RLS and a real email with the hosts' approval in staging; verify the venue map and downloadable calendar on guest devices; configure the retry scheduler and privacy retention process; verify social previews on the real domain; review mobile accessibility and approved music licensing. The Vercel edge must supply its trusted IP header for distributed request limiting. On another host, sanitize and supply `x-real-ip` at a trusted reverse proxy.
+Before accepting responses, have the client activate FormSubmit and confirm delivery from the deployed invitation. The route includes a bounded per-instance abuse guard; configure Vercel firewall protection for deployment-wide limits. On another host, overwrite `x-real-ip` at a trusted reverse proxy. See the email setup document for data retention and delivery limits.
 
 To run the production build locally:
 
@@ -105,9 +90,7 @@ src/components/shared/       Ornaments, navigation, falling hearts, reveals and 
 src/lib/wedding-config.ts    Typed client-confirmed details
 src/lib/calendar/            Date, timezone and ICS helpers
 src/lib/validation/          Shared client/server Zod schemas
-src/lib/supabase/            Server-only Supabase client
-src/lib/notifications/       Provider integration and outbox processing
-supabase/migrations/         Private tables, constraints and atomic RPCs
+src/lib/notifications/       FormSubmit delivery, retry coalescing and abuse guard
 tests/                       Unit, API and browser verification
 docs/                        Requirements, design, animation, data and handoff
 public/images/               Original photograph and five added photographs
@@ -116,6 +99,8 @@ public/audio/                Supplied Perfect MP3
 
 ## Current guest experience
 
-The invitation opens from a large, named ivory envelope into a full-background photographic hero. The hero uses a portrait photograph on phones, a landscape photograph on larger screens, readable overlaid names, the provisional Kigali date countdown, and RSVP shortcut. A restrained 12-heart CSS layer occupies edge lanes; eight remain visible on phones, and reduced motion disables them.
+Every full load starts with an ivory envelope already present in the server-rendered page, covering restored scroll positions before JavaScript loads. Opening or skipping starts at the hero. Without JavaScript, the envelope is hidden and wedding details remain readable.
 
-RSVP is **one continuous form**. Choosing attendance immediately reveals the relevant accommodation question; choosing Yes reveals the preferences directly underneath. Declining hides accommodation. No/unsure need no additional stay details. Optional message and one Send My RSVP action stay in the same form. Values survive toggling, inactive details are cleared from the payload, and confirmed results appear inline. There are no wizard steps or Continue/Back buttons. Backend validation, persistence, rate limiting, idempotency, notifications and WhatsApp are preserved.
+The hero uses `couple.jpeg` on phones and large screens. Desktop framing is bounded independently of the hero's text, removing the previous extra zoom and keeping both faces above the invitation copy. Desktop navigation remains available. The countdown targets the confirmed civil marriage at 3:00 PM in Kigali.
+
+RSVP is one continuous form. Attendance reveals the applicable accommodation question; Yes reveals stay preferences. Values survive toggling, inactive details are cleared from the payload, and responses appear inline. Success means FormSubmit accepted the submission. The form has no preview/test branch and unavailable WhatsApp controls are hidden.
