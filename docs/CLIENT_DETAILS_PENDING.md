@@ -1,6 +1,6 @@
 # Confirmed details and remaining setup
 
-Confirmed: Shee Salamata & Don Vincent; Civil Wedding; Thursday, 17 December 2026; civil marriage at City Hall at 3:00 PM; reception at Kigali Serena Hotel at 4:00 PM; Africa/Kigali; S & D.
+Confirmed: Shee Salamata & Don Vincent; Civil Wedding; Thursday, 17 December 2026; civil marriage at Kigali City Hall at 3:00 PM; reception at Kigali Serena Hotel at 4:00 PM; Africa/Kigali; S & D.
 
 The itinerary shows these two events only. The hero uses `couple.jpeg` on every screen size. The countdown targets the ceremony, and the calendar includes separate, correctly timed ceremony and reception events. End times have not been supplied and are omitted.
 
@@ -10,6 +10,6 @@ RSVP delivery is configured for the confirmed client inbox, nshimiye003@gmail.co
 
 The host confirmed WhatsApp RSVP at **+250788408241**. The secondary action prepares a message to this number once the guest's form details are valid.
 
-Still pending: client inbox activation and delivery check, RSVP deadline, exact City Hall address if directions are needed, event end times, biography, extra family names, dress code and agreed email retention. Accommodation preferences remain planning requests, not bookings or price quotes.
+Still pending: client inbox activation and delivery check, RSVP deadline, exact Kigali City Hall address if directions are needed, event end times, biography, extra family names, dress code and agreed email retention. Accommodation preferences remain planning requests, not bookings or price quotes.
 
 The other approved photographs remain in the introduction collage and gallery. Unselected originals stay in ignored `client-assets/pending-review/` and are not publicly hosted.

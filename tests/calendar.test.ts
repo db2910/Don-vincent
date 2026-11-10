@@ -14,7 +14,7 @@ describe("wedding calendar", () => {
     expect(calendar.match(/BEGIN:VEVENT/g)).toHaveLength(2);
     expect(calendar).toContain("DTSTART:20261217T130000Z");
     expect(calendar).toContain("DTSTART:20261217T140000Z");
-    expect(calendar).toContain("LOCATION:City Hall");
+    expect(calendar).toContain("LOCATION:Kigali City Hall");
     expect(calendar).toContain("LOCATION:Kigali Serena Hotel");
     expect(calendar).not.toMatch(/gusaba|DTEND:/i);
   });

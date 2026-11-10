@@ -35,7 +35,7 @@ export const weddingConfig: WeddingConfig = {
   photos: [photographs.sharedSmile, photographs.selfie, photographs.balloons, { src: "/images/couple.jpeg", alt: "Shee Salamata and Don Vincent together", width: 1600, height: 1066, caption: "With you, always" }],
   countdown: { useDateBeginningWhenTimeUnknown: true },
   programme: [
-    { title: "Civil Marriage", time: "15:00", location: "City Hall", description: "Join us at City Hall as we become husband and wife, surrounded by the people we love." },
+    { title: "Civil Marriage", time: "15:00", location: "Kigali City Hall", description: "Join us at Kigali City Hall as we become husband and wife, surrounded by the people we love." },
     { title: "Wedding Reception", time: "16:00", location: "Kigali Serena Hotel", description: "Celebrate with the newlyweds, family and friends at Kigali Serena Hotel." },
   ],
   music: { src: "/audio/perfect.mp3", title: "Perfect — Ed Sheeran" },

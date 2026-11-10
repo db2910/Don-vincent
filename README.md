@@ -1,6 +1,6 @@
 # Shee Salamata & Don Vincent
 
-An Enhanced Classic Royal Civil Wedding invitation, built with Next.js App Router, strict TypeScript, Tailwind CSS, Motion, Zod and FormSubmit. Thursday, **17 December 2026**: civil marriage at **City Hall, 3:00 PM**, followed by the reception at **Kigali Serena Hotel, 4:00 PM**, Africa/Kigali.
+An Enhanced Classic Royal Civil Wedding invitation, built with Next.js App Router, strict TypeScript, Tailwind CSS, Motion, Zod and FormSubmit. Thursday, **17 December 2026**: civil marriage at **Kigali City Hall, 3:00 PM**, followed by the reception at **Kigali Serena Hotel, 4:00 PM**, Africa/Kigali.
 
 ## Run locally
 

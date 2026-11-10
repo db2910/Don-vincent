@@ -127,7 +127,7 @@ test('civil itinerary matches the confirmed programme and refresh at RSVP reopen
   await expect(itinerary.locator('li')).toHaveCount(2);
   await expect(itinerary.locator('li').first()).toContainText('3:00 PM');
   await expect(itinerary.locator('li').first()).toContainText('Civil Marriage');
-  await expect(itinerary.locator('li').first()).toContainText('City Hall');
+  await expect(itinerary.locator('li').first()).toContainText('Kigali City Hall');
   await expect(itinerary.locator('li').last()).toContainText('4:00 PM');
   await expect(itinerary.locator('li').last()).toContainText('Kigali Serena Hotel');
   await expect(page.locator('body')).not.toContainText(/Gusaba/i);
