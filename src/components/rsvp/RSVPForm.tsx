@@ -3,6 +3,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { rsvpSchema, type RSVPPayload } from "@/lib/validation/rsvp";
 import { isRsvpFailureCode, rsvpFailureMessages } from "@/lib/rsvp-errors";
+import { formSubmitVerificationSchema, isRsvpSupportCode, type FormSubmitVerification } from "@/lib/validation/formsubmit";
 import "./rsvp.css";
 
 type FormValues = {
@@ -121,6 +122,8 @@ export default function RSVPForm({ whatsappNumber, deadline }: Props) {
   const [status, setStatus] = useState<SubmitState>("idle");
   const [confirmed, setConfirmed] = useState<RSVPPayload | null>(null);
   const [submitError, setSubmitError] = useState("");
+  const [supportCode, setSupportCode] = useState("");
+  const [verification, setVerification] = useState<FormSubmitVerification | null>(null);
   const [whatsappOpened, setWhatsappOpened] = useState(false);
   const errorRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -146,6 +149,8 @@ export default function RSVPForm({ whatsappNumber, deadline }: Props) {
       return next;
     });
     setSubmitError("");
+    setSupportCode("");
+    setVerification(null);
     setWhatsappOpened(false);
     if (status === "error") {
       setStatus("idle");
@@ -177,6 +182,8 @@ export default function RSVPForm({ whatsappNumber, deadline }: Props) {
     inFlight.current = true;
     setStatus("submitting");
     setSubmitError("");
+    setSupportCode("");
+    setVerification(null);
     setErrors({});
     try {
       if (submission.current?.fingerprint !== fingerprint) {
@@ -189,8 +196,15 @@ export default function RSVPForm({ whatsappNumber, deadline }: Props) {
         signal: AbortSignal.timeout(30_000),
       });
       const responseData: unknown = await response.json();
-      const data = responseData as { submitted?: boolean; reference?: string; code?: unknown } | null;
-      if (!response.ok) throw new Error(isRsvpFailureCode(data?.code) ? data.code : response.status === 429 ? "rate_limited" : "request_failed");
+      const data = responseData as { submitted?: boolean; reference?: string; code?: unknown; supportCode?: unknown; verification?: unknown } | null;
+      if (!response.ok) {
+        if (isRsvpSupportCode(data?.supportCode)) setSupportCode(data.supportCode);
+        if (data?.code === "provider_rejected") {
+          const handoff = formSubmitVerificationSchema.safeParse(data.verification);
+          if (handoff.success) setVerification(handoff.data);
+        }
+        throw new Error(isRsvpFailureCode(data?.code) ? data.code : response.status === 429 ? "rate_limited" : "request_failed");
+      }
       if (data?.submitted !== true || typeof data.reference !== "string" || !data.reference.trim()) throw new Error("unconfirmed_response");
       setConfirmed(result.data);
       setStatus("success");
@@ -227,6 +241,12 @@ export default function RSVPForm({ whatsappNumber, deadline }: Props) {
       <form method="post" action="/api/rsvp" noValidate onSubmit={handleSubmit} aria-busy={busy} aria-label="Wedding RSVP">
         {(Object.keys(errors).length > 0 || submitError) && <div className="rsvp-error-summary" ref={errorRef} tabIndex={-1} role="alert">
           {submitError || "Please check the highlighted details below."}
+          {supportCode && <p className="rsvp-support-code">Support code: {supportCode}</p>}
+          {verification && validPayload && <div className="rsvp-verification">
+            <p>You can also send your reply with a security check. Your details are already filled in.</p>
+            <button className="button" type="submit" form="rsvp-verification">Continue with verification <span aria-hidden="true">↗</span></button>
+            <p className="rsvp-field-hint">Opens FormSubmit in a new tab. Complete its security check and wait for confirmation there. Opening the tab alone does not confirm your RSVP.</p>
+          </div>}
           {Object.keys(errors).length > 0 && <ul>{Object.entries(errors).map(([name, message]) => <li key={name}><a href={`#rsvp-${name}`} onClick={(event) => { event.preventDefault(); document.getElementById(`rsvp-${name}`)?.focus(); }}>{message}</a></li>)}</ul>}
         </div>}
         <fieldset className="rsvp-form-fields" aria-label="Your RSVP details" disabled={busy || sent}>
@@ -269,6 +289,9 @@ export default function RSVPForm({ whatsappNumber, deadline }: Props) {
           <p>{!validPayload ? "Complete your details to prepare a WhatsApp message." : whatsappOpened ? "Your message has been prepared. Send it in WhatsApp to reach the hosts. Opening WhatsApp does not send this form." : "Prefer a personal message? Send your prepared reply to the hosts. Opening WhatsApp does not send this form."}</p>
         </div>}
       </form>
+      {verification && status === "error" && validPayload && <form id="rsvp-verification" action={verification.action} method="post" target="_blank" rel="noopener" aria-label="RSVP with verification">
+        {Object.entries(verification.fields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
+      </form>}
     </div>
     <p className="rsvp-signature">With love, Shee Salamata &amp; Don Vincent</p>
   </section>;

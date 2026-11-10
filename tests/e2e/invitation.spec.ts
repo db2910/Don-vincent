@@ -168,6 +168,72 @@ test('RSVP preserves conditional values and retains one reference after an activ
   await page.getByRole('button',{name:'Send My RSVP'}).click();await expect(page.locator('#rsvp').getByRole('alert')).toContainText('awaiting confirmation from the hosts');await expect(page.getByRole('link',{name:/RSVP via WhatsApp/})).toHaveAttribute('href',/^https:\/\/wa\.me\/250788408241\?text=/);await expect(page.locator('#rsvp-fullName')).toHaveValue('Test Guest');await page.getByRole('button',{name:'Try Again'}).click();await expect(page.getByRole('status')).toContainText('Your reply has been submitted');await expect(page.locator('#rsvp-fullName')).toBeDisabled();expect(keys).toHaveLength(2);expect(keys[0]).toBe(keys[1]);
 });
 
+test('rejected RSVPs can continue through a verified browser POST without losing details', async ({ page, context }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  let apiRequests = 0;
+  let reference = '';
+  await page.route('**/api/rsvp', async route => {
+    apiRequests++;
+    reference = route.request().headers()['idempotency-key'];
+    const payload = route.request().postDataJSON();
+    await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({
+      code: 'provider_rejected', supportCode: 'FORM-403-provider_rejected',
+      verification: { action: 'https://formsubmit.co/client%40example.test', fields: {
+        Guest: payload.fullName, 'Phone or email': payload.contact, Attendance: 'Regretfully declines',
+        'Message for the couple': payload.guestMessage, _template: 'table', _honey: '', _url: 'http://127.0.0.1:3000/#rsvp', Reference: reference,
+      } },
+    }) });
+  });
+  // Intercept the external POST too: this test never sends a real email.
+  await context.route('https://formsubmit.co/**', route => route.fulfill({ contentType: 'text/html; charset=utf-8', body: '<p>Verification fixture — no email sent</p>' }));
+  await enter(page); await guest(page);
+  await page.getByRole('radio', { name: 'Regretfully declines' }).check();
+  await page.locator('#rsvp-guestMessage').fill('Love & joy <script>never executable</script>');
+  await page.getByRole('button', { name: 'Send My RSVP' }).click();
+  await expect(page.locator('#rsvp').getByRole('alert')).toContainText('FORM-403-provider_rejected');
+  await expect(page.getByText('Your reply has been submitted', { exact: true })).toHaveCount(0);
+  await expect(page.locator('#rsvp-fullName')).toHaveValue('Test Guest');
+  const handoff = page.getByRole('form', { name: 'RSVP with verification' });
+  await expect(handoff).toHaveAttribute('method', 'post');
+  await expect(handoff.locator('[name="_captcha"]')).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const outgoing = context.waitForEvent('request', request => request.url().startsWith('https://formsubmit.co/'));
+  const newTab = context.waitForEvent('page');
+  await page.getByRole('button', { name: 'Continue with verification' }).click();
+  const request = await outgoing;
+  expect(request.method()).toBe('POST');
+  expect(request.headers().referer).toBe('http://127.0.0.1:3000/');
+  const fields = new URLSearchParams(request.postData()!);
+  expect(fields.get('Reference')).toBe(reference);
+  expect(fields.get('Guest')).toBe('Test Guest');
+  expect(fields.get('Message for the couple')).toBe('Love & joy <script>never executable</script>');
+  expect(fields.has('_captcha')).toBe(false);
+  expect(apiRequests).toBe(1);
+  const popup = await newTab;
+  await expect(popup.getByText('Verification fixture — no email sent')).toBeVisible();
+  expect(await popup.evaluate(() => window.opener)).toBeNull();
+  await popup.close();
+  await expect(page.getByText('Your reply has been submitted', { exact: true })).toHaveCount(0);
+  await page.locator('#rsvp-fullName').fill('Changed Guest');
+  await expect(handoff).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Continue with verification' })).toHaveCount(0);
+});
+
+test('timeouts and untrusted verification destinations do not offer a second sending path', async ({ page }) => {
+  for (const response of [
+    { code: 'provider_timeout' },
+    { code: 'provider_rejected', verification: { action: 'https://untrusted.example/collect', fields: { _template: 'table', Reference: 'key' } } },
+  ]) {
+    await page.route('**/api/rsvp', route => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify(response) }));
+    await enter(page); await guest(page);
+    await page.getByRole('radio', { name: 'Regretfully declines' }).check();
+    await page.getByRole('button', { name: 'Send My RSVP' }).click();
+    await expect(page.locator('#rsvp').getByRole('alert')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue with verification' })).toHaveCount(0);
+    await expect(page.locator('#rsvp-fullName')).toHaveValue('Test Guest');
+  }
+});
+
 test('editorial gallery supports arrows, swipe, focus trapping and Escape restoration; calendar includes both civil wedding events',async({page})=>{
   await enter(page);const trigger=page.locator('#moments button').first();await trigger.click();const modal=page.getByRole('dialog');await expect(modal).toBeVisible();
   const original=await modal.locator('img').getAttribute('src');await page.keyboard.press('ArrowRight');await expect(modal.locator('img')).not.toHaveAttribute('src',original!);await modal.getByRole('button',{name:'Next photograph'}).click();

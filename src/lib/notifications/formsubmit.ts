@@ -4,8 +4,9 @@ import { z } from "zod";
 import type { RSVPPayload } from "@/lib/validation/rsvp";
 import { weddingConfig } from "@/lib/wedding-config";
 import type { RsvpFailureCode } from "@/lib/rsvp-errors";
+import type { FormSubmitVerification } from "@/lib/validation/formsubmit";
 
-type Result = { accepted: true } | { accepted: false; status: 409 | 429 | 503; code: RsvpFailureCode };
+type Result = { accepted: true } | { accepted: false; status: 409 | 429 | 503; code: RsvpFailureCode; supportCode?: string };
 const RETENTION_MS = 24 * 60 * 60 * 1000;
 const MAX_SUBMISSIONS = 2000;
 const submissions = new Map<string, { fingerprint: string; expires: number; result: Promise<Result> }>();
@@ -54,11 +55,21 @@ export function buildFormSubmitFields(payload: RSVPPayload, reference: string, f
   return fields;
 }
 
+export function buildFormSubmitVerification(payload: RSVPPayload, reference: string, destination: string, formUrl: string): FormSubmitVerification {
+  const fields = buildFormSubmitFields(payload, reference, formUrl);
+  // Standard browser POST allows FormSubmit to show its own security check.
+  // Keep its real confirmation page rather than implying success in this app.
+  delete fields._captcha;
+  return { action: `https://formsubmit.co/${encodeURIComponent(destination)}`, fields };
+}
+
 function failure(code: RsvpFailureCode, status: 409 | 429 | 503, providerStatus?: number): Result {
   // Fixed categories and HTTP status only. No addresses, guest input or raw
   // provider messages are logged or returned to guests.
   console.warn("RSVP provider failure", { provider: "formsubmit", code, ...(providerStatus !== undefined ? { providerStatus } : {}) });
-  return { accepted: false, status, code };
+  const supportCode = typeof providerStatus === "number" && Number.isInteger(providerStatus) && providerStatus >= 100 && providerStatus <= 599
+    ? `FORM-${providerStatus}-${code}` : undefined;
+  return { accepted: false, status, code, ...(supportCode ? { supportCode } : {}) };
 }
 
 async function deliver(destination: string, fields: Record<string, string>, formUrl: string): Promise<Result> {

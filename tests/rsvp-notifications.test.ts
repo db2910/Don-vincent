@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 import { rsvpSchema } from "@/lib/validation/rsvp";
+import { formSubmitVerificationSchema } from "@/lib/validation/formsubmit";
 const payload = rsvpSchema.parse({ fullName: "Guest", contact: "guest@example.test", attendanceStatus: "accepted", accommodationStatus: "yes", budgetCurrency: "USD", budgetAmount: 125, nights: 2, breakfastPreference: "breakfast", accommodationType: "hotel", sharingPreference: "private", roomOccupants: 2, guestMessage: "See you there!" });
 const fetchMock = vi.fn();
 let warning: ReturnType<typeof vi.spyOn>;
@@ -48,11 +49,12 @@ describe("FormSubmit delivery", () => {
   });
   it.each([403, 429, 500])("does not report success for provider status %s", async status => {
     fetchMock.mockResolvedValue({ ok: false, status });
-    expect(await service.sendFormSubmit(payload, "key", "client@example.test", formUrl)).toEqual({ accepted: false, status: status === 429 ? 429 : 503, code: status === 429 ? "rate_limited" : "provider_rejected" });
+    const code = status === 429 ? "rate_limited" : "provider_rejected";
+    expect(await service.sendFormSubmit(payload, "key", "client@example.test", formUrl)).toEqual({ accepted: false, status: status === 429 ? 429 : 503, code, supportCode: `FORM-${status}-${code}` });
   });
   it("recognizes activation failures without exposing the provider message or recipient", async () => {
     fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => ({ success: "false", message: "This form needs Activation. Check client@example.test" }) });
-    expect(await service.sendFormSubmit(payload, "activation-key", "client@example.test", formUrl)).toEqual({ accepted: false, status: 503, code: "activation_required" });
+    expect(await service.sendFormSubmit(payload, "activation-key", "client@example.test", formUrl)).toEqual({ accepted: false, status: 503, code: "activation_required", supportCode: "FORM-200-activation_required" });
     const logged = JSON.stringify(warning.mock.calls);
     expect(logged).toContain("activation_required"); expect(logged).toContain("200");
     expect(logged).not.toContain("client@example.test"); expect(logged).not.toContain(payload.contact);
@@ -62,7 +64,15 @@ describe("FormSubmit delivery", () => {
     fetchMock.mockRejectedValueOnce(Object.assign(new Error("private transport details"), { name: "TimeoutError" }));
     expect(await service.sendFormSubmit(payload, "timeout-key", "client@example.test", formUrl)).toEqual({ accepted: false, status: 503, code: "provider_timeout" });
     fetchMock.mockResolvedValueOnce({ ok: true, status: 200, json: async () => { throw new Error("not JSON"); } });
-    expect(await service.sendFormSubmit(payload, "json-key", "client@example.test", formUrl)).toEqual({ accepted: false, status: 503, code: "invalid_provider_response" });
+    expect(await service.sendFormSubmit(payload, "json-key", "client@example.test", formUrl)).toEqual({ accepted: false, status: 503, code: "invalid_provider_response", supportCode: "FORM-200-invalid_provider_response" });
+  });
+  it("prepares a standard browser form with CAPTCHA enabled, without sending a second request", () => {
+    const handoff = service.buildFormSubmitVerification(payload, "reply-id", "client@example.test", formUrl);
+    expect(formSubmitVerificationSchema.safeParse(handoff).success).toBe(true);
+    expect(handoff.action).toBe("https://formsubmit.co/client%40example.test");
+    expect(handoff.fields).toMatchObject({ Reference: "reply-id", Guest: payload.fullName, _template: "table", "Budget per room per night": "USD 125", email: payload.contact });
+    for (const field of ["_captcha", "_cc", "_autoresponse", "_next"]) expect(handoff.fields).not.toHaveProperty(field);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
   it("has a default client destination without credentials, and rejects invalid overrides", () => {
     vi.stubEnv("FORMSUBMIT_RECIPIENT", ""); expect(service.getFormSubmitDestination()).toMatch(/^[^@]+@gmail\.com$/);

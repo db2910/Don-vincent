@@ -26,7 +26,7 @@ No dress code, family names, guest deadline, relationship history or accommodati
 
 ## RSVP email setup
 
-The form uses **FormSubmit**, configured on the server for **nshimiye003@gmail.com**. No API key, Resend account, owned sender domain or database is required. Both browser and server validate inputs; the server forwards attendance, contact, applicable accommodation preferences and the optional message. The notification uses FormSubmit's table template with the wedding subject. Confirmation remains inline on the invitation.
+The form uses **FormSubmit**, configured on the server for **nshimiye003@gmail.com**. No API key, Resend account, owned sender domain or database is required. Both browser and server validate inputs; the server forwards attendance, contact, applicable accommodation preferences and the optional message. The notification uses FormSubmit's table template with the wedding subject. Normal confirmation remains inline. After explicit rejection, **Continue with verification** opens a standard browser POST with FormSubmit's CAPTCHA in a new tab, retaining the validated details and reference. Guests complete verification and see confirmation on FormSubmit; opening the tab does not mark the invitation as submitted. Safe support codes expose the provider HTTP status without guest data, so Vercel log access is not required to report failures.
 
 Before sharing with guests: submit one clearly labeled setup response from the deployed site, have the client click FormSubmit's activation link in their Gmail Inbox/Spam, then submit another setup response and confirm receipt. [Full activation instructions and data flow](docs/RSVP_AND_EMAIL.md).
 

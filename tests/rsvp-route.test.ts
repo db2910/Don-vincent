@@ -2,7 +2,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const { configMock, sendMock, rateMock } = vi.hoisted(() => ({ configMock: vi.fn(), sendMock: vi.fn(), rateMock: vi.fn() }));
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/notifications/formsubmit", () => ({ getFormSubmitDestination: configMock, sendFormSubmit: sendMock }));
+vi.mock("@/lib/notifications/formsubmit", async importOriginal => ({
+  ...await importOriginal<typeof import("@/lib/notifications/formsubmit")>(),
+  getFormSubmitDestination: configMock, sendFormSubmit: sendMock,
+}));
 vi.mock("@/lib/notifications/rate-limit", () => ({ checkRsvpRateLimit: rateMock }));
 import { POST } from "@/app/api/rsvp/route";
 const payload = { fullName: "Guest Example", contact: "guest@example.test", attendanceStatus: "accepted", accommodationStatus: "no" };
@@ -69,6 +72,23 @@ describe("email-only RSVP API", () => {
     expect(response.status).toBe(503); expect(data.code).toBe("activation_required");
     expect(data.error).toContain("awaiting confirmation from the hosts");
     expect(data).not.toHaveProperty("submitted");
+  });
+  it("offers a verified browser handoff after rejection, retaining the validated reply and reference", async () => {
+    sendMock.mockResolvedValue({ accepted: false, status: 503, code: "provider_rejected", supportCode: "FORM-403-provider_rejected" });
+    const response = await POST(request()); const data = await response.json();
+    expect(response.status).toBe(503);
+    expect(data).toMatchObject({ code: "provider_rejected", supportCode: "FORM-403-provider_rejected", verification: {
+      action: "https://formsubmit.co/host%40example.test",
+      fields: { Guest: payload.fullName, Attendance: "Joyfully accepts", Accommodation: "Own arrangements", Reference: key, _template: "table" },
+    } });
+    expect(data).not.toHaveProperty("submitted");
+    expect(data.verification.fields).not.toHaveProperty("_captcha");
+    expect(sendMock).toHaveBeenCalledTimes(1);
+  });
+  it("does not offer a second sending path when the first request timed out", async () => {
+    sendMock.mockResolvedValue({ accepted: false, status: 503, code: "provider_timeout" });
+    const data = await (await POST(request())).json();
+    expect(data).not.toHaveProperty("verification"); expect(data).not.toHaveProperty("submitted");
   });
   it("returns a generic error if sending throws", async () => {
     configMock.mockReturnValue(config); sendMock.mockRejectedValue(new Error("sensitive provider details"));
