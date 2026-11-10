@@ -2,6 +2,7 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import { rsvpSchema, type RSVPPayload } from "@/lib/validation/rsvp";
+import { isRsvpFailureCode, rsvpFailureMessages } from "@/lib/rsvp-errors";
 import "./rsvp.css";
 
 type FormValues = {
@@ -188,16 +189,16 @@ export default function RSVPForm({ whatsappNumber, deadline }: Props) {
         signal: AbortSignal.timeout(30_000),
       });
       const responseData: unknown = await response.json();
-      const data = responseData as { submitted?: boolean; reference?: string } | null;
-      if (!response.ok) throw new Error(response.status === 429 ? "rate_limit" : "request_failed");
+      const data = responseData as { submitted?: boolean; reference?: string; code?: unknown } | null;
+      if (!response.ok) throw new Error(isRsvpFailureCode(data?.code) ? data.code : response.status === 429 ? "rate_limited" : "request_failed");
       if (data?.submitted !== true || typeof data.reference !== "string" || !data.reference.trim()) throw new Error("unconfirmed_response");
       setConfirmed(result.data);
       setStatus("success");
       requestAnimationFrame(() => resultRef.current?.focus());
     } catch (error) {
       setStatus("error");
-      setSubmitError(error instanceof Error && error.message === "rate_limit"
-        ? "A few replies have arrived at once. Please wait a moment and try again. Your details are still here."
+      setSubmitError(error instanceof Error && isRsvpFailureCode(error.message)
+        ? rsvpFailureMessages[error.message]
         : "We couldn’t confirm your RSVP. Your details are still here. Please try again.");
       requestAnimationFrame(() => errorRef.current?.focus());
     } finally {

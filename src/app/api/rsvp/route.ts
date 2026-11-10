@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { rsvpSchema } from "@/lib/validation/rsvp";
 import { getFormSubmitDestination, sendFormSubmit } from "@/lib/notifications/formsubmit";
 import { checkRsvpRateLimit } from "@/lib/notifications/rate-limit";
+import { rsvpFailureMessages } from "@/lib/rsvp-errors";
 
 export const runtime = "nodejs";
 const MAX_BODY_BYTES = 12_000;
@@ -65,12 +66,12 @@ export async function POST(request: Request) {
     || request.headers.get("x-real-ip")?.trim()
     || "unknown";
   const retryAfter = checkRsvpRateLimit(ip);
-  if (retryAfter) return reply({ error: "Too many attempts. Please try again shortly." }, 429, { "Retry-After": String(retryAfter) });
+  if (retryAfter) return reply({ error: rsvpFailureMessages.rate_limited, code: "rate_limited" }, 429, { "Retry-After": String(retryAfter) });
 
   try {
     const result = await sendFormSubmit(parsed.data, key, destination, `${expectedOrigin}/#rsvp`);
     if (result.accepted) return reply({ submitted: true, reference: key });
-    return reply({ error: "Your response could not be sent. Your details are still here; please try again." }, result.status, result.status === 429 ? { "Retry-After": "60" } : undefined);
+    return reply({ error: rsvpFailureMessages[result.code], code: result.code }, result.status, result.status === 429 ? { "Retry-After": "60" } : undefined);
   } catch {
     return reply({ error: "Your response could not be sent. Please try again." }, 503);
   }

@@ -161,11 +161,11 @@ for(const choice of ['yes','no','unsure','declined']) {
   });
 }
 
-test('RSVP preserves conditional values and retains one idempotency key across a failed retry',async({page})=>{
+test('RSVP preserves conditional values and retains one reference after an activation failure',async({page})=>{
   let requests=0;const keys:string[]=[];
-  await page.unroute('**/api/rsvp');await page.route('**/api/rsvp',async route=>{keys.push(route.request().headers()['idempotency-key']);requests++;await route.fulfill({status:requests===1?503:200,contentType:'application/json',body:JSON.stringify(requests===1?{error:'Temporary failure'}:{submitted:true,reference:'f9918d32-7358-4cd8-97df-9154e3c79868'})});});
+  await page.unroute('**/api/rsvp');await page.route('**/api/rsvp',async route=>{keys.push(route.request().headers()['idempotency-key']);requests++;await route.fulfill({status:requests===1?503:200,contentType:'application/json',body:JSON.stringify(requests===1?{code:'activation_required',error:'Private provider details'}:{submitted:true,reference:'f9918d32-7358-4cd8-97df-9154e3c79868'})});});
   await enter(page);await guest(page);await page.getByRole('radio',{name:'Joyfully accepts'}).check();await page.getByRole('radio',{name:'Yes',exact:true}).check();await page.locator('#rsvp-budgetAmount').fill('120');await page.getByRole('radio',{name:"I'm not sure yet",exact:true}).check();await expect(page.locator('#rsvp-budgetAmount')).toHaveCount(0);await page.getByRole('radio',{name:'Yes',exact:true}).check();await expect(page.locator('#rsvp-budgetAmount')).toHaveValue('120');await page.getByRole('radio',{name:'No, I have my own arrangements',exact:true}).check();
-  await page.getByRole('button',{name:'Send My RSVP'}).click();await expect(page.locator('#rsvp').getByRole('alert')).toContainText('couldn’t confirm');await expect(page.locator('#rsvp-fullName')).toHaveValue('Test Guest');await page.getByRole('button',{name:'Try Again'}).click();await expect(page.getByRole('status')).toContainText('Your reply has been submitted');await expect(page.locator('#rsvp-fullName')).toBeDisabled();expect(keys).toHaveLength(2);expect(keys[0]).toBe(keys[1]);
+  await page.getByRole('button',{name:'Send My RSVP'}).click();await expect(page.locator('#rsvp').getByRole('alert')).toContainText('awaiting confirmation from the hosts');await expect(page.getByRole('link',{name:/RSVP via WhatsApp/})).toHaveAttribute('href',/^https:\/\/wa\.me\/250788408241\?text=/);await expect(page.locator('#rsvp-fullName')).toHaveValue('Test Guest');await page.getByRole('button',{name:'Try Again'}).click();await expect(page.getByRole('status')).toContainText('Your reply has been submitted');await expect(page.locator('#rsvp-fullName')).toBeDisabled();expect(keys).toHaveLength(2);expect(keys[0]).toBe(keys[1]);
 });
 
 test('editorial gallery supports arrows, swipe, focus trapping and Escape restoration; calendar includes both civil wedding events',async({page})=>{

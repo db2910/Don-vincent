@@ -163,6 +163,20 @@ describe("RSVP guest journey", { timeout: 15_000 }, () => {
     expect(fetchMock.mock.calls[2][1].headers["Idempotency-Key"]).not.toBe(fetchMock.mock.calls[1][1].headers["Idempotency-Key"]);
   });
 
+  it("explains activation failures and retains the form without showing provider text", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 503, json: async () => ({ code: "activation_required", error: "Raw service text with private@example.test" }) }));
+    render(<RSVPForm whatsappNumber="250788408241" />);
+    await guest(user, "Regretfully declines");
+    await user.click(screen.getByRole("button", { name: /Send My RSVP/ }));
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("awaiting confirmation from the hosts");
+    expect(alert).not.toHaveTextContent("private@example.test");
+    expect(screen.getByLabelText(/Full name/)).toHaveValue("A Guest");
+    expect(screen.getByRole("link", { name: /RSVP via WhatsApp/ })).toHaveAttribute("href", expect.stringContaining("wa.me/250788408241"));
+    expect(screen.queryByText("Your reply has been submitted")).not.toBeInTheDocument();
+  });
+
   it("does not show success without a confirmed submission", async () => {
     const user = userEvent.setup();
     stubResponse({ sent: false });

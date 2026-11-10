@@ -20,3 +20,9 @@ Rendered hero/navigation samples passed at 320, 390, 768 and 1440 pixels wide. M
 - 20 targeted browser checks passed across the envelope and final FormSubmit runs. Verification covers the envelope with scripts deliberately withheld, focus, replay, Escape, reduced motion, no-JavaScript access, the hero, actual MP3 play/pause, form branches/retries and responsive layouts. Browser submissions use fixtures and do not email the client.
 
 Live activation and actual Gmail receipt require the client inbox owner. No separate database, guest dashboard or notification queue is provisioned. FormSubmit controls email rendering and documents its own 30-day archive. Retry/rate guards are bounded and per server instance; they are not distributed guarantees.
+
+## Activation error follow-up
+
+A user-authorized request labeled as a website setup check reached FormSubmit in under a second. The provider returned HTTP 200 with `success:"false"` and an activation-required message, reporting that it had sent the activation email. This was not a real guest RSVP. Inbox receipt has not been verified.
+
+The application now distinguishes that response from an unavailable connection, timeout, rejected request or malformed provider reply. The API returns a safe error code, the form explains the corresponding next step and preserves entries, and logs contain only fixed failure categories and provider HTTP status. Raw provider replies and guest details are not exposed. The hosts must still confirm the activation link at the client inbox.

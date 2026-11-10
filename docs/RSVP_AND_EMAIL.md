@@ -22,7 +22,7 @@ The email uses FormSubmit's **table** template and subject `Wedding RSVP · Shee
 
 FormSubmit's documented email templates are basic, table and box; the previous custom Resend HTML design is not used. The website retains its ivory/gold form, inline confirmation and response review. The provider controls the notification email's layout and sender identity.
 
-The old RSVP preview banner and preview/test states are removed. Every valid submission now attempts FormSubmit. Missing/invalid provider acceptance shows a retry message while preserving inputs. `Your RSVP details` is an accessible fieldset label, with no extra visible legend. WhatsApp RSVP now uses the host-confirmed **+250788408241**. It prepares a message after valid form details are entered; guests must press Send in WhatsApp. `NEXT_PUBLIC_HOST_WHATSAPP` optionally overrides this number.
+The old RSVP preview banner and preview/test states are removed. Every valid submission now attempts FormSubmit. Activation-required responses explain that host confirmation is pending and offer WhatsApp. Timeouts, unavailable connections and other provider failures have separate safe messages; every failure preserves the form inputs. `Your RSVP details` is an accessible fieldset label, with no extra visible legend. WhatsApp RSVP now uses the host-confirmed **+250788408241**. It prepares a message after valid form details are entered; guests must press Send in WhatsApp. `NEXT_PUBLIC_HOST_WHATSAPP` optionally overrides this number.
 
 ## Data and success
 
@@ -32,13 +32,13 @@ The browser keeps the same UUID for retrying unchanged details and creates anoth
 
 ## Validation and abuse protection
 
-The route rejects cross-origin requests, missing/invalid UUIDs, non-JSON input, bodies above 12 KB, honeypots and inconsistent accommodation fields. Accommodation requests are planning preferences, not bookings. Guest input cannot override the recipient, template, subject or add a CC. Provider errors and guest details are not written to application logs.
+The route rejects cross-origin requests, missing/invalid UUIDs, non-JSON input, bodies above 12 KB, honeypots and inconsistent accommodation fields. Accommodation requests are planning preferences, not bookings. Guest input cannot override the recipient, template, subject or add a CC. Application logs record only a fixed provider-failure category and HTTP status. Guest details, email addresses, raw provider messages and transport error details are never logged.
 
 AJAX submissions disable the provider's interactive CAPTCHA to keep guests on the invitation. The server retains its honeypot and a bounded eight-attempts-per-ten-minutes guard per hashed trusted IP, per instance. This guard is not shared across serverless instances; hosting firewall rules can provide deployment-wide protection. Vercel supplies the trusted IP header; another host must sanitize `x-real-ip` at its proxy.
 
 ## Verification limits
 
-Automated API tests mock FormSubmit; browser submissions are intercepted. They cover validation, conditional fields, recipient selection, provider errors, retry coalescing, unchanged references, removed notices and preserved form inputs. They do not send activation messages or real responses to the client. The account owner must complete the activation and inbox check above.
+Automated API tests mock FormSubmit; browser submissions are intercepted. They cover validation, conditional fields, recipient selection, provider errors, retry coalescing, unchanged references, removed notices and preserved form inputs. They do not send activation messages or real responses to the client. A single separately authorized setup check reached FormSubmit and returned HTTP 200 with success:false and the message "This form needs Activation". FormSubmit reported sending the activation email to the configured client inbox. Inbox receipt and clicking that link still require the client; no guest RSVP was submitted by this check.
 
 The hero, refresh overlay, no-JavaScript fallback, keyboard behavior, mobile layouts and music are verified independently of live email activation. Hosts manage mailbox retention and any exports; FormSubmit's own records follow its service settings.
 

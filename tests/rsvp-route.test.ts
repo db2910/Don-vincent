@@ -59,9 +59,16 @@ describe("email-only RSVP API", () => {
     expect(response.headers.get("retry-after")).toBe("120"); expect(sendMock).not.toHaveBeenCalled();
   });
   it.each([409, 429, 503])("does not report success for provider status %s", async (status) => {
-    configMock.mockReturnValue(config); sendMock.mockResolvedValue({ accepted: false, status });
+    configMock.mockReturnValue(config); sendMock.mockResolvedValue({ accepted: false, status, code: status === 409 ? "submission_conflict" : status === 429 ? "rate_limited" : "provider_unavailable" });
     const response = await POST(request()); expect(response.status).toBe(status);
     expect(await response.text()).not.toContain('"submitted":true');
+  });
+  it("returns a safe activation code and message rather than false success", async () => {
+    sendMock.mockResolvedValue({ accepted: false, status: 503, code: "activation_required" });
+    const response = await POST(request()); const data = await response.json();
+    expect(response.status).toBe(503); expect(data.code).toBe("activation_required");
+    expect(data.error).toContain("awaiting confirmation from the hosts");
+    expect(data).not.toHaveProperty("submitted");
   });
   it("returns a generic error if sending throws", async () => {
     configMock.mockReturnValue(config); sendMock.mockRejectedValue(new Error("sensitive provider details"));
