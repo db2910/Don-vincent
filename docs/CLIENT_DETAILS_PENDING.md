@@ -8,6 +8,8 @@ The host supplied `public/audio/perfect.mp3` and selected Perfect by Ed Sheeran.
 
 RSVP delivery is configured for the confirmed client inbox, nshimiye003@gmail.com, through FormSubmit. The developer's testing address and Resend/Supabase setup are removed. No API key or owned sender domain is required. The client must activate the form using the email triggered by the first submission from the live site, then confirm receipt of a second setup response. See [activation instructions](RSVP_AND_EMAIL.md).
 
-Still pending: client inbox activation and delivery check, RSVP deadline, host WhatsApp number if that optional action is desired, exact City Hall address if directions are needed, event end times, biography, extra family names, dress code and agreed email retention. WhatsApp is hidden while its number is absent. Accommodation preferences remain planning requests, not bookings or price quotes.
+The host confirmed WhatsApp RSVP at **+250788408241**. The secondary action prepares a message to this number once the guest's form details are valid.
+
+Still pending: client inbox activation and delivery check, RSVP deadline, exact City Hall address if directions are needed, event end times, biography, extra family names, dress code and agreed email retention. Accommodation preferences remain planning requests, not bookings or price quotes.
 
 The other approved photographs remain in the introduction collage and gallery. Unselected originals stay in ignored `client-assets/pending-review/` and are not publicly hosted.

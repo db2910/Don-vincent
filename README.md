@@ -30,7 +30,7 @@ The form uses **FormSubmit**, configured on the server for **nshimiye003@gmail.c
 
 Before sharing with guests: submit one clearly labeled setup response from the deployed site, have the client click FormSubmit's activation link in their Gmail Inbox/Spam, then submit another setup response and confirm receipt. [Full activation instructions and data flow](docs/RSVP_AND_EMAIL.md).
 
-The recipient can be overridden with server-only `FORMSUBMIT_RECIPIENT`; no override is needed for the supplied client inbox. Production and development use the same real sending flow. Automated tests intercept submissions and do not send emails. The old preview banner, Resend setup and developer testing inbox are removed. WhatsApp is hidden until a valid host number is configured.
+The recipient can be overridden with server-only `FORMSUBMIT_RECIPIENT`; no override is needed for the supplied client inbox. Production and development use the same real sending flow. Automated tests intercept submissions and do not send emails. The old preview banner, Resend setup and developer testing inbox are removed. WhatsApp RSVP is configured for the confirmed host number, +250788408241.
 
 Provider acceptance does not prove inbox delivery. FormSubmit documents a 30-day archive; the website stores no separate guest database. Retry coalescing is per server instance and emails include a stable reference; there is no global exactly-once guarantee. See the setup document for details.
 
@@ -44,7 +44,7 @@ The supplied `public/audio/perfect.mp3` is connected as **Perfect — Ed Sheeran
 
 ## WhatsApp and sharing
 
-Set `NEXT_PUBLIC_HOST_WHATSAPP` to the **verified** international host number (digits, including country code), then restart/rebuild. Until configured, the secondary WhatsApp action is hidden. It prepares an encoded message from the reviewed response; opening it does not store the RSVP or prove the guest sent a message.
+WhatsApp RSVP uses the confirmed number **+250788408241**. If it changes, set `NEXT_PUBLIC_HOST_WHATSAPP` to the replacement international number (digits, including country code), then restart/rebuild. The action becomes available when the guest has completed valid RSVP details. It prepares an encoded message from the reviewed response; opening it does not store the RSVP or prove the guest sent a message.
 
 Set `NEXT_PUBLIC_BASE_URL` only when the actual deployment origin is known, such as the final HTTPS domain. It supplies canonical/social metadata and the server's allowed origin. In local development leave it blank to use the request origin. If set, it must match the browser's exact origin: `localhost` and `127.0.0.1` differ.
 

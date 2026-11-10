@@ -22,7 +22,7 @@ The email uses FormSubmit's **table** template and subject `Wedding RSVP · Shee
 
 FormSubmit's documented email templates are basic, table and box; the previous custom Resend HTML design is not used. The website retains its ivory/gold form, inline confirmation and response review. The provider controls the notification email's layout and sender identity.
 
-The old RSVP preview banner and preview/test states are removed. Every valid submission now attempts FormSubmit. Missing/invalid provider acceptance shows a retry message while preserving inputs. `Your RSVP details` is an accessible fieldset label, with no extra visible legend. WhatsApp is completely hidden until a valid `NEXT_PUBLIC_HOST_WHATSAPP` number is provided, so guests do not see an unavailable secondary action.
+The old RSVP preview banner and preview/test states are removed. Every valid submission now attempts FormSubmit. Missing/invalid provider acceptance shows a retry message while preserving inputs. `Your RSVP details` is an accessible fieldset label, with no extra visible legend. WhatsApp RSVP now uses the host-confirmed **+250788408241**. It prepares a message after valid form details are entered; guests must press Send in WhatsApp. `NEXT_PUBLIC_HOST_WHATSAPP` optionally overrides this number.
 
 ## Data and success
 

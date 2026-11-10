@@ -39,7 +39,7 @@ export const weddingConfig: WeddingConfig = {
     { title: "Wedding Reception", time: "16:00", location: "Kigali Serena Hotel", description: "Celebrate with the newlyweds, family and friends at Kigali Serena Hotel." },
   ],
   music: { src: "/audio/perfect.mp3", title: "Perfect — Ed Sheeran" },
-  whatsappNumber: process.env.NEXT_PUBLIC_HOST_WHATSAPP || null,
+  whatsappNumber: process.env.NEXT_PUBLIC_HOST_WHATSAPP || "250788408241",
   publicBaseUrl: process.env.NEXT_PUBLIC_BASE_URL || null,
   status: { ceremonyTime: "confirmed", story: "pending", photos: "confirmed" },
 };

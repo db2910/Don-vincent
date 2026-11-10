@@ -155,7 +155,7 @@ for(const choice of ['yes','no','unsure','declined']) {
         await page.locator('#rsvp-budgetCurrency').selectOption('RWF');await page.locator('#rsvp-budgetAmount').fill('35000');await page.locator('#rsvp-nights').fill('3');await page.getByRole('radio',{name:'Bed and breakfast',exact:true}).check();await page.getByRole('radio',{name:'Either is fine',exact:true}).check();await page.getByRole('radio',{name:'I prefer a private room',exact:true}).check();await page.locator('#rsvp-roomOccupants').fill('2');
       } else await expect(page.locator('#rsvp-budgetAmount')).toHaveCount(0);
     }
-    await page.locator('#rsvp-guestMessage').fill('With love from this test fixture.');await expect(page.getByRole('button',{name:'Continue',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'RSVP via WhatsApp'})).toHaveCount(0);await expect(page.getByText(/RSVP preview|once the hosts add their contact number/)).toHaveCount(0);
+    await page.locator('#rsvp-guestMessage').fill('With love from this test fixture.');await expect(page.getByRole('button',{name:'Continue',exact:true})).toHaveCount(0);await expect(page.getByRole('link',{name:/RSVP via WhatsApp/})).toHaveAttribute('href',/^https:\/\/wa\.me\/250788408241\?text=/);await expect(page.getByText(/RSVP preview|once the hosts add their contact number/)).toHaveCount(0);
     await page.getByRole('button',{name:'Send My RSVP'}).click();await expect(page.getByRole('status')).toContainText('Your reply has been submitted');await expect(page.locator('#rsvp-fullName')).toHaveValue('Test Guest');
     expect(submitted?.accommodationStatus).toBe(choice==='declined'?'not_applicable':choice);expect(submitted?.budgetAmount).toBe(choice==='yes'?35000:null);
   });
