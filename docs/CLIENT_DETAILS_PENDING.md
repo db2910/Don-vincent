@@ -10,6 +10,8 @@ At the owner's request, RSVP delivery temporarily uses **donkyleben@gmail.com** 
 
 The host confirmed WhatsApp RSVP at **+250788408241**. The secondary action prepares a message to this number once the guest's form details are valid.
 
-Still pending: successful testing inbox delivery check, restoration and delivery check at the client inbox, RSVP deadline, exact Kigali City Hall address if directions are needed, event end times, biography, extra family names, dress code and agreed email retention. Accommodation preferences remain planning requests, not bookings or price quotes.
+The updated browser flow completed one real, labeled setup response to the owner's inbox with HTTP 200, provider `success:"true"` and inline confirmation. Actual inbox receipt and email presentation await the owner's confirmation.
+
+Still pending: owner confirmation of the testing email, restoration and delivery check at the client inbox, RSVP deadline, exact Kigali City Hall address if directions are needed, event end times, biography, extra family names, dress code and agreed email retention. Accommodation preferences remain planning requests, not bookings or price quotes.
 
 The other approved photographs remain in the introduction collage and gallery. Unselected originals stay in ignored `client-assets/pending-review/` and are not publicly hosted.
