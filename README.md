@@ -12,7 +12,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open **http://127.0.0.1:3000**. The real couple photograph and fonts are local assets. No external service is required to view the invitation. FormSubmit temporarily uses the owner's **donkyleben@gmail.com** inbox for delivery testing. No API key is required. Restore the client inbox only after testing succeeds.
+Open **http://127.0.0.1:3000**. The real couple photograph and fonts are local assets. No external service is required to view the invitation. FormSubmit is configured for **nshimiye003@gmail.com**, restored after the owner confirmed successful testing and correct email details at their own inbox. No API key is required.
 
 ## Configure the wedding
 
@@ -26,13 +26,13 @@ No dress code, family names, guest deadline, relationship history or accommodati
 
 ## RSVP email setup
 
-The form uses **FormSubmit**, temporarily configured for **donkyleben@gmail.com** at the owner's request. Both browser and server validate inputs. `POST /api/rsvp` prepares fixed recipient endpoints and readable attendance/accommodation fields; it makes no outbound email request and never reports a submission as sent. The browser then calls FormSubmit's documented AJAX endpoint directly, avoiding the server-to-server request that returned HTTP 403 on Vercel. Inline confirmation appears only after explicit provider success. The notification uses the table template and wedding subject.
+The form uses **FormSubmit**, configured for the restored client inbox **nshimiye003@gmail.com**. Both browser and server validate inputs. `POST /api/rsvp` prepares fixed recipient endpoints and readable attendance/accommodation fields; it makes no outbound email request and never reports a submission as sent. The browser then calls FormSubmit's documented AJAX endpoint directly, avoiding the server-to-server request that returned HTTP 403 on Vercel. Inline confirmation appears only after explicit provider success. The notification uses the table template and wedding subject.
 
 After explicit provider rejection, **Continue with verification** opens FormSubmit's CAPTCHA in a new tab, retaining the same validated details and reference. Guests see confirmation on FormSubmit; opening the tab does not confirm the RSVP. Safe support codes expose the provider HTTP status without guest data. No API key, owned domain or database is required.
 
-The owner confirmed activation of the testing inbox. Confirm delivery of a clearly labeled setup response before restoring **nshimiye003@gmail.com**. Then confirm delivery to the client before sharing with guests. [Full testing/restoration instructions and data flow](docs/RSVP_AND_EMAIL.md).
+The owner confirmed receipt and correct accommodation details from a real live-browser test, then requested restoring the client inbox. Both inbox activations were confirmed earlier. Actual receipt at the client after restoration still needs confirmation. [Testing record and data flow](docs/RSVP_AND_EMAIL.md).
 
-Set `FORMSUBMIT_RECIPIENT` to override the current testing default. Restore `nshimiye003@gmail.com` in local/Vercel settings and restore that source default together after testing, then redeploy. Production and development use the same real sending flow. Automated tests intercept both preparation and external delivery and do not send emails. The old preview banner and Resend/Supabase setup remain removed. WhatsApp uses the confirmed host number, +250788408241.
+Set `FORMSUBMIT_RECIPIENT` to override the client default. If Vercel has an override, it must also use `nshimiye003@gmail.com`; no override is needed for the restored source default. Production and development use the same real sending flow. Automated tests intercept both preparation and external delivery and do not send emails. The old preview banner and Resend/Supabase setup remain removed. WhatsApp uses the confirmed host number, +250788408241.
 
 Provider acceptance does not prove inbox delivery. FormSubmit documents a 30-day archive; the website stores no separate guest database. A busy guard prevents concurrent sends in the form, and retries of unchanged details use the same email reference. There is no provider-wide idempotency guarantee or server delivery cache. See the setup document for details.
 

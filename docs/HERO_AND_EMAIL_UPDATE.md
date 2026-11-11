@@ -1,6 +1,6 @@
 # Hero, envelope and FormSubmit update
 
-This report records earlier hero/envelope and server-email work. RSVP delivery now uses browser AJAX after server validation, temporarily testing **donkyleben@gmail.com** at the owner's request. The client inbox will be restored after successful delivery checks. The historical verification counts below describe their original implementation. [Current testing steps and data flow](RSVP_AND_EMAIL.md).
+This report records earlier hero/envelope and server-email work. RSVP delivery now uses browser AJAX after server validation. The owner confirmed successful testing at **donkyleben@gmail.com** and requested restoring **nshimiye003@gmail.com**. The historical verification counts below describe their original implementation. [Current testing record and data flow](RSVP_AND_EMAIL.md).
 
 ## Visible changes
 

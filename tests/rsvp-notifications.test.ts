@@ -21,9 +21,9 @@ describe("FormSubmit preparation", () => {
     expect(prepared.verification.fields).not.toHaveProperty("_captcha");
     expect(fetchMock).not.toHaveBeenCalled();
   });
-  it("temporarily uses the owner's inbox and allows restoring the client", () => {
-    vi.stubEnv("FORMSUBMIT_RECIPIENT", ""); expect(getFormSubmitDestination()).toBe("donkyleben@gmail.com");
-    vi.stubEnv("FORMSUBMIT_RECIPIENT", "nshimiye003@gmail.com"); expect(getFormSubmitDestination()).toBe("nshimiye003@gmail.com");
+  it("defaults to the restored client inbox and allows an explicit testing override", () => {
+    vi.stubEnv("FORMSUBMIT_RECIPIENT", ""); expect(getFormSubmitDestination()).toBe("nshimiye003@gmail.com");
+    vi.stubEnv("FORMSUBMIT_RECIPIENT", "donkyleben@gmail.com"); expect(getFormSubmitDestination()).toBe("donkyleben@gmail.com");
     vi.stubEnv("FORMSUBMIT_RECIPIENT", "https://untrusted.example"); expect(getFormSubmitDestination()).toBeNull();
   });
   it("omits inactive accommodation details and never treats a phone as Reply-To email", () => {

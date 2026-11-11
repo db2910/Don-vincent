@@ -1,18 +1,18 @@
 # FormSubmit testing and RSVP delivery
 
-The owner requested a temporary switch to **donkyleben@gmail.com** for testing. The final client inbox is **nshimiye003@gmail.com**. Do not restore it until the owner confirms that testing works. The client and owner have each confirmed clicking their activation link. No Resend account, API key, database, paid plan or owned sender domain is required.
+The current recipient is **nshimiye003@gmail.com**, restored after the owner confirmed successful testing at **donkyleben@gmail.com**, including correctly displayed accommodation details. The client and owner have each confirmed clicking their activation link. No Resend account, API key, database, paid plan or owned sender domain is required.
 
-## Current test setup and restoration
+## Current recipient and further checks
 
-`getFormSubmitDestination()` temporarily defaults to the owner's inbox. The private `.env.local` and `.env.example` use `FORMSUBMIT_RECIPIENT=donkyleben@gmail.com`. An existing Vercel override takes precedence over the source default; check the preparation endpoint's returned destination before sending a real test. All tests must be clearly labeled as setup checks, not guest RSVPs.
+`getFormSubmitDestination()` defaults to the client inbox. The private `.env.local` and `.env.example` use `FORMSUBMIT_RECIPIENT=nshimiye003@gmail.com`. An existing Vercel override takes precedence over the source default; check the preparation endpoint's returned destination before sending a real test. All tests must be clearly labeled as setup checks, not guest RSVPs. Preparing a reply alone sends no email.
 
 1. Open **https://don-vincent1.vercel.app/** after the latest deployment.
-2. Submit a clearly labeled setup response and confirm its FormSubmit success and receipt at **donkyleben@gmail.com**. If activation is requested, check Inbox/Spam and click **Activate Form** before retrying.
+2. For a final client check, submit a clearly labeled setup response and confirm its FormSubmit success and receipt at **nshimiye003@gmail.com**. If activation is requested, check Inbox/Spam and click **Activate Form** before retrying.
 3. If the service explicitly rejects the AJAX request, use **Continue with verification**, complete the security check in its new tab, and wait for the provider's confirmation.
-4. After the owner confirms delivery works, restore the source default and both local/Vercel `FORMSUBMIT_RECIPIENT` values to **nshimiye003@gmail.com**, then redeploy.
+4. If a future test temporarily changes the recipient, restore both the source default and any local/Vercel `FORMSUBMIT_RECIPIENT` overrides to **nshimiye003@gmail.com**, then redeploy.
 5. Confirm actual client inbox receipt from the final live URL before inviting guests. Changing the recipient or website may require activation again. Delete setup emails afterward if desired.
 
-Do not share the testing deployment as the final guest invitation while responses go to the owner's testing inbox. `NEXT_PUBLIC_BASE_URL`, if configured, must equal the browser's actual origin.
+Do not share a future testing deployment as the final guest invitation while responses go to a testing inbox. `NEXT_PUBLIC_BASE_URL`, if configured, must equal the browser's actual origin.
 
 ## Why delivery changed
 
@@ -48,7 +48,7 @@ Automated tests mock browser FormSubmit delivery and intercept native fallback P
 
 Earlier authorized client-inbox setup checks triggered activation and reproduced the rejection. On 11 November 2026 the owner explicitly requested using their own inbox for testing. One labeled request to **donkyleben@gmail.com** returned HTTP 200 with an activation-required message (reference `3eb4eb18-985a-46e0-818a-56a642f7f7fb`); the owner then confirmed activation.
 
-After deployment of `55e6ac2c57bfeb52cafc585980601ba43409b119`, one labeled setup RSVP was submitted through the **live invitation's browser flow** to **donkyleben@gmail.com**. The real provider returned **HTTP 200** with `success:"true"` and "The form was submitted successfully." The website showed its inline submitted confirmation with no error. Reference: `2b12426f-14d4-4f10-b3bf-ccc5084dba98`. The test included synthetic attendance and all accommodation preferences (USD 125, two nights, breakfast, hotel, private room, two occupants) and a clear not-a-guest-RSVP note. Exactly one provider POST occurred; no client-inbox email was sent during this check. Provider acceptance is verified; the owner still needs to confirm inbox receipt and email presentation.
+After deployment of `55e6ac2c57bfeb52cafc585980601ba43409b119`, one labeled setup RSVP was submitted through the **live invitation's browser flow** to **donkyleben@gmail.com**. The real provider returned **HTTP 200** with `success:"true"` and "The form was submitted successfully." The website showed its inline submitted confirmation with no error. Reference: `2b12426f-14d4-4f10-b3bf-ccc5084dba98`. The test included synthetic attendance and all accommodation preferences (USD 125, two nights, breakfast, hotel, private room, two occupants) and a clear not-a-guest-RSVP note. Exactly one provider POST occurred; no client-inbox email was sent during this check. The owner confirmed inbox receipt and correctly shown accommodation details, then explicitly requested restoring the client email. The source default and local/example environment values were restored. No additional email was sent to the client as part of that configuration restoration.
 
 Validation for this change: 29 unit/API checks, seven targeted browser checks, lint and production build passed. Automated browser tests intercepted the external provider request as well as the preparation route. The separate live check above used the owner's explicit authorization.
 

@@ -11,10 +11,10 @@ const labels: Record<string, string> = {
   private: "Private room", share: "Happy to share if needed", own_group: "Sharing with own group",
 };
 
-/** Temporarily testing the owner's inbox. Restore nshimiye003@gmail.com after
- * delivery is confirmed. FORMSUBMIT_RECIPIENT overrides the default on each host. */
+/** Owner-inbox delivery was confirmed before restoring the client's recipient.
+ * FORMSUBMIT_RECIPIENT overrides the default on each host. */
 export function getFormSubmitDestination(): string | null {
-  const recipient = process.env.FORMSUBMIT_RECIPIENT?.trim() || "donkyleben@gmail.com";
+  const recipient = process.env.FORMSUBMIT_RECIPIENT?.trim() || "nshimiye003@gmail.com";
   return z.email().safeParse(recipient).success ? recipient : null;
 }
 
