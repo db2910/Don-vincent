@@ -1,13 +1,23 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page, type Route } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 const pageErrors = new WeakMap<Page,string[]>();
 const viewports = [{width:320,height:568},{width:390,height:844},{width:768,height:1024},{width:1024,height:768},{width:1440,height:1000},{width:844,height:390}];
+const corsHeaders = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'POST, OPTIONS' };
+function preparedReply(route: Route) {
+  const payload = route.request().postDataJSON();
+  const reference = route.request().headers()['idempotency-key'];
+  const fields = { Guest: payload.fullName, 'Phone or email': payload.contact, Attendance: payload.attendanceStatus,
+    'Message for the couple': payload.guestMessage || '', _template: 'table', _honey: '', _url: 'http://127.0.0.1:3000/#rsvp', Reference: reference };
+  return { reference, delivery: { action: 'https://formsubmit.co/ajax/client%40example.test', fields: { ...fields, _captcha: 'false' } },
+    verification: { action: 'https://formsubmit.co/client%40example.test', fields } };
+}
 
-test.beforeEach(async ({page}) => {
+test.beforeEach(async ({page, context}) => {
   const errors: string[] = []; pageErrors.set(page,errors);
   page.on("pageerror", error => errors.push(error.message));
   // All browser submissions are fixtures, including on machines configured for live email.
-  await page.route("**/api/rsvp", route => route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({submitted:true,reference:"browser-fixture"})}));
+  await page.route("**/api/rsvp", route => route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(preparedReply(route))}));
+  await context.route('https://formsubmit.co/**', route => route.fulfill({status:200,headers:corsHeaders,contentType:'application/json',body:JSON.stringify({success:'true'})}));
 });
 test.afterEach(async ({page}) => { expect(pageErrors.get(page) ?? []).toEqual([]); });
 async function enter(page:Page) { await page.goto("/",{waitUntil:"domcontentloaded"}); await page.getByRole("button",{name:"Skip introduction"}).click(); }
@@ -144,7 +154,7 @@ test('civil itinerary matches the confirmed programme and refresh at RSVP reopen
 for(const choice of ['yes','no','unsure','declined']) {
   test(`continuous RSVP reveals only applicable fields for ${choice}`,async({page})=>{
     let submitted:Record<string,unknown>|undefined;
-    await page.unroute('**/api/rsvp');await page.route('**/api/rsvp',async route=>{submitted=route.request().postDataJSON();await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({submitted:true,reference:'browser-fixture'})});});
+    await page.unroute('**/api/rsvp');await page.route('**/api/rsvp',async route=>{submitted=route.request().postDataJSON();await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(preparedReply(route))});});
     await enter(page);await guest(page);await expect(page.locator('#rsvp-budgetAmount')).toHaveCount(0);
     await page.getByRole('radio',{name:choice==='declined'?'Regretfully declines':'Joyfully accepts'}).check();
     if(choice==='declined') await expect(page.getByRole('group',{name:'Will you need accommodation?'})).toHaveCount(0);
@@ -161,9 +171,10 @@ for(const choice of ['yes','no','unsure','declined']) {
   });
 }
 
-test('RSVP preserves conditional values and retains one reference after an activation failure',async({page})=>{
+test('RSVP preserves conditional values and retains one reference after an activation failure',async({page,context})=>{
   let requests=0;const keys:string[]=[];
-  await page.unroute('**/api/rsvp');await page.route('**/api/rsvp',async route=>{keys.push(route.request().headers()['idempotency-key']);requests++;await route.fulfill({status:requests===1?503:200,contentType:'application/json',body:JSON.stringify(requests===1?{code:'activation_required',error:'Private provider details'}:{submitted:true,reference:'f9918d32-7358-4cd8-97df-9154e3c79868'})});});
+  await page.route('**/api/rsvp',async route=>{keys.push(route.request().headers()['idempotency-key']);await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(preparedReply(route))});});
+  await context.route('https://formsubmit.co/ajax/**',async route=>{if(route.request().method()!=='OPTIONS')requests++;await route.fulfill({status:200,headers:corsHeaders,contentType:'application/json',body:JSON.stringify(requests===1?{success:'false',message:'This form needs Activation. Private provider details'}:{success:'true'})});});
   await enter(page);await guest(page);await page.getByRole('radio',{name:'Joyfully accepts'}).check();await page.getByRole('radio',{name:'Yes',exact:true}).check();await page.locator('#rsvp-budgetAmount').fill('120');await page.getByRole('radio',{name:"I'm not sure yet",exact:true}).check();await expect(page.locator('#rsvp-budgetAmount')).toHaveCount(0);await page.getByRole('radio',{name:'Yes',exact:true}).check();await expect(page.locator('#rsvp-budgetAmount')).toHaveValue('120');await page.getByRole('radio',{name:'No, I have my own arrangements',exact:true}).check();
   await page.getByRole('button',{name:'Send My RSVP'}).click();await expect(page.locator('#rsvp').getByRole('alert')).toContainText('awaiting confirmation from the hosts');await expect(page.getByRole('link',{name:/RSVP via WhatsApp/})).toHaveAttribute('href',/^https:\/\/wa\.me\/250788408241\?text=/);await expect(page.locator('#rsvp-fullName')).toHaveValue('Test Guest');await page.getByRole('button',{name:'Try Again'}).click();await expect(page.getByRole('status')).toContainText('Your reply has been submitted');await expect(page.locator('#rsvp-fullName')).toBeDisabled();expect(keys).toHaveLength(2);expect(keys[0]).toBe(keys[1]);
 });
@@ -175,17 +186,12 @@ test('rejected RSVPs can continue through a verified browser POST without losing
   await page.route('**/api/rsvp', async route => {
     apiRequests++;
     reference = route.request().headers()['idempotency-key'];
-    const payload = route.request().postDataJSON();
-    await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({
-      code: 'provider_rejected', supportCode: 'FORM-403-provider_rejected',
-      verification: { action: 'https://formsubmit.co/client%40example.test', fields: {
-        Guest: payload.fullName, 'Phone or email': payload.contact, Attendance: 'Regretfully declines',
-        'Message for the couple': payload.guestMessage, _template: 'table', _honey: '', _url: 'http://127.0.0.1:3000/#rsvp', Reference: reference,
-      } },
-    }) });
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(preparedReply(route)) });
   });
   // Intercept the external POST too: this test never sends a real email.
-  await context.route('https://formsubmit.co/**', route => route.fulfill({ contentType: 'text/html; charset=utf-8', body: '<p>Verification fixture — no email sent</p>' }));
+  await context.route('https://formsubmit.co/**', route => route.request().url().includes('/ajax/')
+    ? route.fulfill({ status: route.request().method() === 'OPTIONS' ? 200 : 403, headers: corsHeaders, body: 'Forbidden' })
+    : route.fulfill({ contentType: 'text/html; charset=utf-8', body: '<p>Verification fixture — no email sent</p>' }));
   await enter(page); await guest(page);
   await page.getByRole('radio', { name: 'Regretfully declines' }).check();
   await page.locator('#rsvp-guestMessage').fill('Love & joy <script>never executable</script>');
@@ -197,7 +203,7 @@ test('rejected RSVPs can continue through a verified browser POST without losing
   await expect(handoff).toHaveAttribute('method', 'post');
   await expect(handoff.locator('[name="_captcha"]')).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  const outgoing = context.waitForEvent('request', request => request.url().startsWith('https://formsubmit.co/'));
+  const outgoing = context.waitForEvent('request', request => request.url().startsWith('https://formsubmit.co/') && !request.url().includes('/ajax/'));
   const newTab = context.waitForEvent('page');
   await page.getByRole('button', { name: 'Continue with verification' }).click();
   const request = await outgoing;
@@ -219,12 +225,16 @@ test('rejected RSVPs can continue through a verified browser POST without losing
   await expect(page.getByRole('button', { name: 'Continue with verification' })).toHaveCount(0);
 });
 
-test('timeouts and untrusted verification destinations do not offer a second sending path', async ({ page }) => {
-  for (const response of [
-    { code: 'provider_timeout' },
-    { code: 'provider_rejected', verification: { action: 'https://untrusted.example/collect', fields: { _template: 'table', Reference: 'key' } } },
-  ]) {
-    await page.route('**/api/rsvp', route => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify(response) }));
+test('untrusted or mismatched preparation never sends data to the provider', async ({ page, context }) => {
+  let providerRequests = 0;
+  await context.route('https://formsubmit.co/**', route => { providerRequests++; return route.abort(); });
+  for (const invalid of ['destination', 'reference']) {
+    await page.route('**/api/rsvp', route => {
+      const response = preparedReply(route);
+      if (invalid === 'destination') response.delivery.action = 'https://untrusted.example/collect';
+      else response.reference = 'f9918d32-7358-4cd8-97df-9154e3c79868';
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(response) });
+    });
     await enter(page); await guest(page);
     await page.getByRole('radio', { name: 'Regretfully declines' }).check();
     await page.getByRole('button', { name: 'Send My RSVP' }).click();
@@ -232,6 +242,7 @@ test('timeouts and untrusted verification destinations do not offer a second sen
     await expect(page.getByRole('button', { name: 'Continue with verification' })).toHaveCount(0);
     await expect(page.locator('#rsvp-fullName')).toHaveValue('Test Guest');
   }
+  expect(providerRequests).toBe(0);
 });
 
 test('editorial gallery supports arrows, swipe, focus trapping and Escape restoration; calendar includes both civil wedding events',async({page})=>{

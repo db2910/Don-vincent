@@ -1,7 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import { rsvpSchema } from "@/lib/validation/rsvp";
-import { buildFormSubmitVerification, getFormSubmitDestination, sendFormSubmit } from "@/lib/notifications/formsubmit";
+import { getFormSubmitDestination, prepareFormSubmit } from "@/lib/notifications/formsubmit";
 import { checkRsvpRateLimit } from "@/lib/notifications/rate-limit";
 import { rsvpFailureMessages } from "@/lib/rsvp-errors";
 
@@ -69,17 +69,8 @@ export async function POST(request: Request) {
   if (retryAfter) return reply({ error: rsvpFailureMessages.rate_limited, code: "rate_limited" }, 429, { "Retry-After": String(retryAfter) });
 
   try {
-    const result = await sendFormSubmit(parsed.data, key, destination, `${expectedOrigin}/#rsvp`);
-    if (result.accepted) return reply({ submitted: true, reference: key });
-    return reply({
-      error: rsvpFailureMessages[result.code], code: result.code,
-      ...(result.supportCode ? { supportCode: result.supportCode } : {}),
-      // Offer a browser submission only after an explicit rejection. Timeouts
-      // have uncertain delivery and must not automatically trigger a second send.
-      ...(result.code === "provider_rejected" ? {
-        verification: buildFormSubmitVerification(parsed.data, key, destination, `${expectedOrigin}/#rsvp`),
-      } : {}),
-    }, result.status, result.status === 429 ? { "Retry-After": "60" } : undefined);
+    // This is validation/preparation only, never an email-delivery confirmation.
+    return reply(prepareFormSubmit(parsed.data, key, destination, `${expectedOrigin}/#rsvp`));
   } catch {
     return reply({ error: "Your response could not be sent. Please try again." }, 503);
   }

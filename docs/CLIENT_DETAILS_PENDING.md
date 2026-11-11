@@ -6,10 +6,10 @@ The itinerary shows these two events only. The hero uses `couple.jpeg` on every 
 
 The host supplied `public/audio/perfect.mp3` and selected Perfect by Ed Sheeran. Its floating play/pause control is enabled; the envelope opening requests playback through a user gesture. Refresh always returns to a fresh envelope.
 
-RSVP delivery is configured for the confirmed client inbox, nshimiye003@gmail.com, through FormSubmit. The developer's testing address and Resend/Supabase setup are removed. No API key or owned sender domain is required. The host confirmed that the client activated the form. A subsequent authorized live setup check was rejected. A browser verification option is now offered after explicit rejection; actual delivery through that option still needs confirmation. See [setup instructions](RSVP_AND_EMAIL.md).
+At the owner's request, RSVP delivery temporarily uses **donkyleben@gmail.com** for testing. The final client inbox remains **nshimiye003@gmail.com** and will be restored after successful delivery checks. Both inbox activations have been confirmed by the owner. The Vercel server-to-server request returned HTTP 403; delivery now uses browser AJAX after server validation, with a CAPTCHA-enabled browser fallback after explicit rejection. No API key, owned sender domain or database is required. See [testing and restoration instructions](RSVP_AND_EMAIL.md).
 
 The host confirmed WhatsApp RSVP at **+250788408241**. The secondary action prepares a message to this number once the guest's form details are valid.
 
-Still pending: successful client inbox delivery check, RSVP deadline, exact Kigali City Hall address if directions are needed, event end times, biography, extra family names, dress code and agreed email retention. Accommodation preferences remain planning requests, not bookings or price quotes.
+Still pending: successful testing inbox delivery check, restoration and delivery check at the client inbox, RSVP deadline, exact Kigali City Hall address if directions are needed, event end times, biography, extra family names, dress code and agreed email retention. Accommodation preferences remain planning requests, not bookings or price quotes.
 
 The other approved photographs remain in the introduction collage and gallery. Unselected originals stay in ignored `client-assets/pending-review/` and are not publicly hosted.

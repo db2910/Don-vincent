@@ -3,7 +3,8 @@
 import { useRef, useState, type FormEvent } from "react";
 import { rsvpSchema, type RSVPPayload } from "@/lib/validation/rsvp";
 import { isRsvpFailureCode, rsvpFailureMessages } from "@/lib/rsvp-errors";
-import { formSubmitVerificationSchema, isRsvpSupportCode, type FormSubmitVerification } from "@/lib/validation/formsubmit";
+import { formSubmitPreparationSchema, type FormSubmitVerification } from "@/lib/validation/formsubmit";
+import { deliverFormSubmit } from "@/lib/notifications/formsubmit-browser";
 import "./rsvp.css";
 
 type FormValues = {
@@ -196,16 +197,20 @@ export default function RSVPForm({ whatsappNumber, deadline }: Props) {
         signal: AbortSignal.timeout(30_000),
       });
       const responseData: unknown = await response.json();
-      const data = responseData as { submitted?: boolean; reference?: string; code?: unknown; supportCode?: unknown; verification?: unknown } | null;
+      const data = responseData as { code?: unknown } | null;
       if (!response.ok) {
-        if (isRsvpSupportCode(data?.supportCode)) setSupportCode(data.supportCode);
-        if (data?.code === "provider_rejected") {
-          const handoff = formSubmitVerificationSchema.safeParse(data.verification);
-          if (handoff.success) setVerification(handoff.data);
-        }
         throw new Error(isRsvpFailureCode(data?.code) ? data.code : response.status === 429 ? "rate_limited" : "request_failed");
       }
-      if (data?.submitted !== true || typeof data.reference !== "string" || !data.reference.trim()) throw new Error("unconfirmed_response");
+      const prepared = formSubmitPreparationSchema.safeParse(responseData);
+      if (!prepared.success || prepared.data.reference !== submission.current.key) throw new Error("unconfirmed_response");
+      const delivery = await deliverFormSubmit(prepared.data.delivery);
+      if (!delivery.accepted) {
+        if (delivery.supportCode) setSupportCode(delivery.supportCode);
+        // Timeouts have uncertain delivery, so only explicit rejection offers
+        // a second, CAPTCHA-enabled browser form using the same reference.
+        if (delivery.code === "provider_rejected") setVerification(prepared.data.verification);
+        throw new Error(delivery.code);
+      }
       setConfirmed(result.data);
       setStatus("success");
       requestAnimationFrame(() => resultRef.current?.focus());

@@ -12,7 +12,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open **http://127.0.0.1:3000**. The real couple photograph and fonts are local assets. No external service is required to view the invitation. FormSubmit is already configured for the client inbox; it requires the inbox owner to activate the form before guest responses can reach their email. No API key is required.
+Open **http://127.0.0.1:3000**. The real couple photograph and fonts are local assets. No external service is required to view the invitation. FormSubmit temporarily uses the owner's **donkyleben@gmail.com** inbox for delivery testing. No API key is required. Restore the client inbox only after testing succeeds.
 
 ## Configure the wedding
 
@@ -26,13 +26,15 @@ No dress code, family names, guest deadline, relationship history or accommodati
 
 ## RSVP email setup
 
-The form uses **FormSubmit**, configured on the server for **nshimiye003@gmail.com**. No API key, Resend account, owned sender domain or database is required. Both browser and server validate inputs; the server forwards attendance, contact, applicable accommodation preferences and the optional message. The notification uses FormSubmit's table template with the wedding subject. Normal confirmation remains inline. After explicit rejection, **Continue with verification** opens a standard browser POST with FormSubmit's CAPTCHA in a new tab, retaining the validated details and reference. Guests complete verification and see confirmation on FormSubmit; opening the tab does not mark the invitation as submitted. Safe support codes expose the provider HTTP status without guest data, so Vercel log access is not required to report failures.
+The form uses **FormSubmit**, temporarily configured for **donkyleben@gmail.com** at the owner's request. Both browser and server validate inputs. `POST /api/rsvp` prepares fixed recipient endpoints and readable attendance/accommodation fields; it makes no outbound email request and never reports a submission as sent. The browser then calls FormSubmit's documented AJAX endpoint directly, avoiding the server-to-server request that returned HTTP 403 on Vercel. Inline confirmation appears only after explicit provider success. The notification uses the table template and wedding subject.
 
-Before sharing with guests: submit one clearly labeled setup response from the deployed site, have the client click FormSubmit's activation link in their Gmail Inbox/Spam, then submit another setup response and confirm receipt. [Full activation instructions and data flow](docs/RSVP_AND_EMAIL.md).
+After explicit provider rejection, **Continue with verification** opens FormSubmit's CAPTCHA in a new tab, retaining the same validated details and reference. Guests see confirmation on FormSubmit; opening the tab does not confirm the RSVP. Safe support codes expose the provider HTTP status without guest data. No API key, owned domain or database is required.
 
-The recipient can be overridden with server-only `FORMSUBMIT_RECIPIENT`; no override is needed for the supplied client inbox. Production and development use the same real sending flow. Automated tests intercept submissions and do not send emails. The old preview banner, Resend setup and developer testing inbox are removed. WhatsApp RSVP is configured for the confirmed host number, +250788408241.
+The owner confirmed activation of the testing inbox. Confirm delivery of a clearly labeled setup response before restoring **nshimiye003@gmail.com**. Then confirm delivery to the client before sharing with guests. [Full testing/restoration instructions and data flow](docs/RSVP_AND_EMAIL.md).
 
-Provider acceptance does not prove inbox delivery. FormSubmit documents a 30-day archive; the website stores no separate guest database. Retry coalescing is per server instance and emails include a stable reference; there is no global exactly-once guarantee. See the setup document for details.
+Set `FORMSUBMIT_RECIPIENT` to override the current testing default. Restore `nshimiye003@gmail.com` in local/Vercel settings and restore that source default together after testing, then redeploy. Production and development use the same real sending flow. Automated tests intercept both preparation and external delivery and do not send emails. The old preview banner and Resend/Supabase setup remain removed. WhatsApp uses the confirmed host number, +250788408241.
+
+Provider acceptance does not prove inbox delivery. FormSubmit documents a 30-day archive; the website stores no separate guest database. A busy guard prevents concurrent sends in the form, and retries of unchanged details use the same email reference. There is no provider-wide idempotency guarantee or server delivery cache. See the setup document for details.
 
 ## Photos and music
 
@@ -90,7 +92,7 @@ src/components/shared/       Ornaments, navigation, falling hearts, reveals and 
 src/lib/wedding-config.ts    Typed client-confirmed details
 src/lib/calendar/            Date, timezone and ICS helpers
 src/lib/validation/          Shared client/server Zod schemas
-src/lib/notifications/       FormSubmit delivery, retry coalescing and abuse guard
+src/lib/notifications/       FormSubmit preparation, browser delivery and abuse guard
 tests/                       Unit, API and browser verification
 docs/                        Requirements, design, animation, data and handoff
 public/images/               Original photograph and five added photographs
