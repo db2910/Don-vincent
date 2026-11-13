@@ -42,7 +42,7 @@ Five newly supplied photographs are now used from `public/images/moments/`, alon
 
 All nine original added photos remain unchanged in `client-assets/pending-review/`, outside the public web root and ignored by Git. Five suitable photographs were copied with identical content and original filenames into the invitation; unrelated or sensitive compositions are not included. Add future approved photographs to configuration without duplicating gallery entries.
 
-The soundtrack is **Intashyo — Chacha Imfurikeye ft. Fox Makare**, using the client’s [YouTube video](https://www.youtube.com/watch?v=5jfgdZlA7Pk). Opening the envelope or pressing Play loads the official YouTube IFrame API and a visible player. Page load and Skip do not start playback. Play/pause follows actual player events; closing stops playback. Browser autoplay restrictions show a prompt to tap the video, and provider errors retain a direct YouTube link. The previous local MP3 remains available as an unused asset; configuring `music.src` without `youtubeVideoId` uses the native audio player.
+The soundtrack is **Intashyo — Chacha Imfurikeye ft. Fox Makare**, using the client-supplied MP3 in `public/audio/`. Opening the envelope starts native audio playback synchronously from the opening click or key interaction. Page load and Skip do not start playback. The floating control pauses and resumes the same looping audio element, with a manual retry if the browser blocks playback. No video window or YouTube requests are used. The previous Perfect MP3 remains as an unused asset. The Visit Rwanda guide link is larger and bold, with a contrasting gold background and border.
 
 ## WhatsApp and sharing
 
@@ -97,7 +97,7 @@ tests/                       Unit, API and browser verification
 docs/                        Requirements, design, animation, data and handoff
 public/images/               Original photograph and five added photographs
 public/images/experiences/   Optimized Rwanda activity photographs
-public/audio/                Previous soundtrack asset (unused)
+public/audio/                Supplied Intashyo MP3 and previous soundtrack
 ```
 
 ## Current guest experience

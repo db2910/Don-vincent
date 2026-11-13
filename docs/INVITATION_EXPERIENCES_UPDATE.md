@@ -2,7 +2,7 @@
 
 Requested changes:
 
-- The soundtrack is [Intashyo — Chacha Imfurikeye ft. Fox Makare](https://www.youtube.com/watch?v=5jfgdZlA7Pk), confirmed using YouTube's oEmbed metadata.
+- The soundtrack is Intashyo — Chacha Imfurikeye ft. Fox Makare, using the client-supplied MP3 in `public/audio/`.
 - Reception starts at **4:30 PM, Africa/Kigali**, including invitation copy, itinerary, calendar, venue, and sharing metadata. Ceremony remains at 3:00 PM.
 - Guest-facing wording uses Wedding / Wedding Ceremony. Existing calendar UIDs are retained so earlier downloads refer to the same events.
 - Removed “I'm not sure yet”, “No preference”, “Either is fine”, and “I'll share with my own group” from both form options and server validation.
@@ -10,7 +10,9 @@ Requested changes:
 
 ## Soundtrack
 
-The official YouTube IFrame API loads only after opening the envelope or clicking Play. The player remains visible while active, supports pause/resume and a close-and-stop control, and follows real playback state. A blocked-autoplay prompt and direct song link cover browser/provider restrictions. No YouTube audio is downloaded or copied into the repository. Native audio support remains available through `music.src` when no YouTube video ID is configured.
+Opening the envelope calls native audio playback synchronously within the opening click or key event. One looping audio element stays mounted while guests browse. The floating control pauses and resumes the same track, and failed playback offers a manual retry. Page load and Skip do not start music. The client-supplied file is preserved with its original filename. The YouTube player, API loader, video-window styles and obsolete tests have been removed.
+
+“Explore Rwanda with Visit Rwanda” is now a 22px bold link with a contrasting ivory-gold background, gold border, generous padding and a visible keyboard focus outline. It wraps within narrow mobile screens.
 
 ## Experiences and images
 
@@ -25,15 +27,9 @@ Images are resized to 640 × 400 WebP, served locally with Next Image, and used 
 
 ## Verification
 
-The initial unit run found four existing component-test failures: success fixtures still returned the old direct submission response. Fixtures now emulate the existing preparation and browser-delivery contract, without bypassing production validation.
+Existing native-audio tests cover user-gesture playback, rejected playback, retries and synchronization with real media events. The browser playback scenario uses the actual supplied MP3 and verifies that opening starts playback, pause/resume preserves position, and no video or YouTube requests appear. Responsive checks cover the larger guide link on narrow phones and desktop. Automated RSVP requests remain intercepted and do not send email.
 
-Tests cover removed options, optional/multiple/duplicate/invalid experience choices, attendance switching, email and WhatsApp fields, calendar timing and YouTube player state/error handling. Browser checks include keyboard selection and six viewport sizes. Automated RSVP requests are intercepted and do not send email.
-
-Validation on 13 November 2026:
-
-- `npm run lint`, `npm run typecheck`, and `npm run build` passed.
-- `npm test -- --maxWorkers=1 --reporter=dot`: 74 passed across 10 files. The single-worker run avoids local resource contention seen while the production build and browsers were also running.
-- Production-server smoke checks at 1440 × 1000 and 390 × 844 had no console errors or horizontal overflow. [Desktop cards](screenshots/experiences/desktop.png) and [mobile cards](screenshots/experiences/mobile.png) show multiple selected interests.
-- Live Chrome playback of the actual YouTube song was verified on mobile-sized and desktop viewports. Desktop playback advanced, paused at about 1.99 seconds, resumed at about 2.66 seconds, and removed the iframe when closed.
-- Layout/envelope browser tests intercept the YouTube script so video-provider timing cannot affect animation snapshots. Player failures and controls are covered separately. The pre-hydration screenshot keeps the original caret styles to avoid introducing a test-only hydration mismatch.
-- All 23 distinct browser scenarios were validated: the first run passed 21, with two envelope snapshot timing failures under local load. A targeted rerun of both failures and the pre-hydration screenshot passed all three checks. Responsive checks cover 320 × 568, 390 × 844, 768 × 1024, 1024 × 768, 1440 × 1000 and 844 × 390.
+- 71 unit and integration tests passed across nine files.
+- ESLint and the production build passed, including the build's TypeScript checks.
+- Seven targeted Chrome browser checks passed: envelope lifecycle, skip/Escape/reduced-motion behavior, synchronous music requests, actual MP3 playback and pause/resume, and 320px, 390px and 1440px layouts.
+- Updated [desktop](screenshots/experiences/desktop.png) and [mobile](screenshots/experiences/mobile.png) previews show the guide link at 22px and font weight 700 without horizontal overflow.

@@ -1,5 +1,6 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+import { weddingConfig } from "../../src/lib/wedding-config";
 const pageErrors = new WeakMap<Page,string[]>();
 const viewports = [{width:320,height:568},{width:390,height:844},{width:768,height:1024},{width:1024,height:768},{width:1440,height:1000},{width:844,height:390}];
 const corsHeaders = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'POST, OPTIONS' };
@@ -15,9 +16,6 @@ function preparedReply(route: Route) {
 test.beforeEach(async ({page, context}) => {
   const errors: string[] = []; pageErrors.set(page,errors);
   page.on("pageerror", error => errors.push(error.message));
-  // Keep layout/envelope checks independent of third-party video timing.
-  // Player states and failures have unit coverage; live playback is checked separately.
-  await page.route('https://www.youtube.com/iframe_api', route => route.abort());
   // All browser submissions are fixtures, including on machines configured for live email.
   await page.route("**/api/rsvp", route => route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(preparedReply(route))}));
   await context.route('https://formsubmit.co/**', route => route.fulfill({status:200,headers:corsHeaders,contentType:'application/json',body:JSON.stringify({success:'true'})}));
@@ -118,6 +116,25 @@ test('hero uses couple.jpeg with a confirmed Kigali countdown and subtle hearts'
 test('the opening click requests music within the browser user gesture, once',async({page})=>{
   await page.addInitScript(()=>{(window as unknown as {musicGesture:boolean[]}).musicGesture=[];window.addEventListener('sd:request-wedding-music',()=>{(window as unknown as {musicGesture:boolean[]}).musicGesture.push(navigator.userActivation.isActive);});});
   await page.emulateMedia({reducedMotion:'reduce'});await page.goto('/');await page.getByRole('button',{name:'Open your invitation',exact:true}).click();expect(await page.evaluate(()=>(window as unknown as {musicGesture:boolean[]}).musicGesture)).toEqual([true]);
+});
+
+test('opening the envelope starts the supplied audio without a video and supports pause and resume', async ({ page }) => {
+  const youtubeRequests: string[] = [];
+  page.on('request', request => { if (/youtube|ytimg|googlevideo/.test(request.url())) youtubeRequests.push(request.url()); });
+  await page.goto('/');
+  const audio = page.locator('audio');
+  await expect(audio).toHaveAttribute('src', weddingConfig.music.src!);
+  expect(await audio.evaluate((element: HTMLAudioElement) => element.paused)).toBe(true);
+  await page.getByRole('button', {name:'Open your invitation', exact:true}).click();
+  await expect.poll(() => audio.evaluate((element: HTMLAudioElement) => element.currentTime)).toBeGreaterThan(0);
+  await expect(page.locator('.envelope-dialog')).not.toBeVisible({timeout:10000});
+  await page.getByRole('button', {name:'Pause wedding music'}).click();
+  await expect.poll(() => audio.evaluate((element: HTMLAudioElement) => element.paused)).toBe(true);
+  const pausedAt = await audio.evaluate((element: HTMLAudioElement) => element.currentTime);
+  await page.getByRole('button', {name:'Play wedding music'}).click();
+  await expect.poll(() => audio.evaluate((element: HTMLAudioElement) => element.currentTime)).toBeGreaterThan(pausedAt);
+  await expect(page.locator('iframe[src*="youtube"], video')).toHaveCount(0);
+  expect(youtubeRequests).toEqual([]);
 });
 
 test('wedding itinerary matches the confirmed programme and refresh at RSVP reopens the envelope', async({page})=>{
