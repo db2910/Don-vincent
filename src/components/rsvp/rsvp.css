@@ -43,6 +43,28 @@
 .rsvp-stay-details>.rsvp-field:last-child{margin-bottom:0}
 .rsvp-note{font-size:17px;line-height:1.75;background:#f7f1e7;padding:16px 18px;border-left:2px solid #a08350;color:#594834;margin:0 0 28px}
 .rsvp-message{padding-top:28px;border-top:1px solid #c4a46a50}
+.rsvp-experiences{border:0;border-top:1px solid #c4a46a50;min-width:0;margin:12px 0 32px;padding:28px 0 0}
+.rsvp-experiences:focus{outline:2px solid #8b6b37;outline-offset:6px}
+.rsvp-experiences legend{float:left;width:100%;padding:0;margin:0 0 12px;font-size:26px;line-height:1.35;color:var(--ink,#493a2f)}
+.rsvp-experiences-intro{clear:both;margin:0 0 22px;font-size:17px;line-height:1.7;color:#685644}
+.rsvp-experience-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.rsvp-experience-card{display:flex;flex-direction:column;min-width:0;border:1px solid #d2c7b4;background:#fffdf8;cursor:pointer;transition:border-color .2s,box-shadow .2s;overflow:hidden;border-radius:3px}
+.rsvp-experience-card:hover{border-color:#987746;box-shadow:0 6px 20px #57473712}
+.rsvp-experience-card.is-selected{border-color:#876735;box-shadow:0 0 0 1px #876735;background:#f7f0e3}
+.rsvp-experience-card:has(input:focus-visible){outline:2px solid #8b6b37;outline-offset:4px}
+.rsvp-experience-photo{position:relative;aspect-ratio:8/5;overflow:hidden;background:#e8e2d4}
+.rsvp-experience-photo img{display:block;width:100%;height:100%;object-fit:cover}
+.rsvp-experience-photo:after{content:"";position:absolute;inset:45% 0 0;background:linear-gradient(transparent,#17251eaa);pointer-events:none}
+.rsvp-experience-category{position:absolute;z-index:1;left:14px;bottom:12px;right:12px;color:#fff;font-size:13px;line-height:1.5;letter-spacing:.03em}
+.rsvp-experience-copy{display:flex;flex:1;flex-direction:column;padding:18px 16px 16px}
+.rsvp-experience-location{color:#685644;font-size:12px;line-height:1.5;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px}
+.rsvp-experience-title{font-size:24px;line-height:1.2;color:var(--ink,#493a2f);margin-bottom:10px}
+.rsvp-experience-description{font-size:16px;line-height:1.6;color:#685644;margin-bottom:18px}
+.rsvp-experience-select{display:flex;gap:10px;align-items:center;margin-top:auto;padding-top:12px;border-top:1px solid #c4a46a50;font-size:15px;line-height:1.5;color:#594329;min-height:44px}
+.rsvp-experience-select input{appearance:auto;accent-color:#876735;width:19px;height:19px;flex-shrink:0;margin:0}
+.rsvp-experience-guide{display:inline-block;color:#594329;font-size:15px;text-underline-offset:4px;margin-top:10px}
+.rsvp-experience-guide:focus-visible{outline:2px solid #8b6b37;outline-offset:4px}
+.rsvp-form-fields:disabled .rsvp-experience-card{cursor:default}
 .rsvp-error-summary{color:#843c30;background:#fcf2ee;border:1px solid #c28a7b;padding:18px;margin:0 0 28px;font-size:17px;line-height:1.75}
 .rsvp-error-summary:focus{outline:2px solid #843c30;outline-offset:4px}
 .rsvp-error-summary ul{padding-left:20px;margin:10px 0 0}
@@ -84,4 +106,5 @@
 @keyframes rsvp-reveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:600px){.rsvp-section{padding-inline:16px}.rsvp-intro{margin-bottom:34px}.rsvp-intro .eyebrow{font-size:14px;letter-spacing:.1em}.rsvp-paper{padding:34px 24px}.rsvp-choices-pair{grid-template-columns:1fr}.rsvp-budget{grid-template-columns:1fr}.rsvp-stay-details{padding-left:16px}.rsvp-send{width:100%;min-width:0;gap:18px}.rsvp-review>div{grid-template-columns:1fr;gap:4px;padding:9px 0}.rsvp-confirmation{padding:16px;gap:10px}}
 @media(max-width:350px){.rsvp-paper{padding:32px 18px}.rsvp-stay-details{padding-left:12px}.rsvp-choice{padding:12px;gap:10px}.rsvp-intro h2{font-size:56px}}
+@media(max-width:600px){.rsvp-experience-grid{grid-template-columns:1fr}.rsvp-experience-photo{aspect-ratio:2/1}.rsvp-experience-title{font-size:27px}}
 @media(prefers-reduced-motion:reduce){.rsvp-reveal,.rsvp-confirmation{animation:none}.rsvp-field input,.rsvp-field select,.rsvp-field textarea,.rsvp-choice{transition:none}}

@@ -8,7 +8,7 @@ export type WeddingConfig = {
   photography: { hero: WeddingPhoto; mobileHero: WeddingPhoto; couple: WeddingPhoto; story: WeddingPhoto };
   countdown: { useDateBeginningWhenTimeUnknown: boolean };
   programme: { title: string; time: string; location: string; description?: string }[];
-  music: { src: string | null; title: string | null };
+  music: { src: string | null; title: string | null; youtubeVideoId?: string };
   whatsappNumber: string | null; publicBaseUrl: string | null;
   status: { ceremonyTime: "pending" | "confirmed"; story: "pending" | "confirmed"; photos: "confirmed" | "placeholder" };
 };
@@ -35,10 +35,10 @@ export const weddingConfig: WeddingConfig = {
   photos: [photographs.sharedSmile, photographs.selfie, photographs.balloons, { src: "/images/couple.jpeg", alt: "Shee Salamata and Don Vincent together", width: 1600, height: 1066, caption: "With you, always" }],
   countdown: { useDateBeginningWhenTimeUnknown: true },
   programme: [
-    { title: "Civil Marriage", time: "15:00", location: "Kigali City Hall", description: "Join us at Kigali City Hall as we become husband and wife, surrounded by the people we love." },
-    { title: "Wedding Reception", time: "16:00", location: "Kigali Serena Hotel", description: "Celebrate with the newlyweds, family and friends at Kigali Serena Hotel." },
+    { title: "Wedding Ceremony", time: "15:00", location: "Kigali City Hall", description: "Join us at Kigali City Hall as we become husband and wife, surrounded by the people we love." },
+    { title: "Wedding Reception", time: "16:30", location: "Kigali Serena Hotel", description: "Celebrate with the newlyweds, family and friends at Kigali Serena Hotel." },
   ],
-  music: { src: "/audio/perfect.mp3", title: "Perfect — Ed Sheeran" },
+  music: { src: null, youtubeVideoId: "5jfgdZlA7Pk", title: "Intashyo — Chacha Imfurikeye ft. Fox Makare" },
   whatsappNumber: process.env.NEXT_PUBLIC_HOST_WHATSAPP || "250788408241",
   publicBaseUrl: process.env.NEXT_PUBLIC_BASE_URL || null,
   status: { ceremonyTime: "confirmed", story: "pending", photos: "confirmed" },

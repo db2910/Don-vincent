@@ -8,8 +8,8 @@ import "@fontsource/cormorant-garamond/500.css";
 import "./globals.css";
 import { weddingConfig } from "@/lib/wedding-config";
 
-const title = "Shee Salamata & Don Vincent | Civil Wedding Invitation";
-const description = "Together with our families, we joyfully invite you to celebrate our Civil Wedding on December 17, 2026: civil marriage at Kigali City Hall at 3:00 PM, followed by a reception at Kigali Serena Hotel at 4:00 PM.";
+const title = "Shee Salamata & Don Vincent | Wedding Invitation";
+const description = "Together with our families, we joyfully invite you to celebrate our Wedding on December 17, 2026: wedding ceremony at Kigali City Hall at 3:00 PM, followed by a reception at Kigali Serena Hotel at 4:30 PM.";
 export const metadata: Metadata = {
   title, description,
   ...(weddingConfig.publicBaseUrl ? { metadataBase: new URL(weddingConfig.publicBaseUrl), alternates: { canonical: "/" } } : {}),

@@ -4,8 +4,14 @@ import { LoaderCircle, Pause, Play } from "lucide-react";
 import { weddingConfig } from "@/lib/wedding-config";
 import { INVITATION_MUSIC_EVENT } from "@/lib/music";
 import styles from "./MusicToggle.module.css";
+import YouTubeMusicToggle from "./YouTubeMusicToggle";
 
 export default function MusicToggle() {
+  if (weddingConfig.music.youtubeVideoId) return <YouTubeMusicToggle videoId={weddingConfig.music.youtubeVideoId} title={weddingConfig.music.title}/>;
+  return <AudioMusicToggle/>;
+}
+
+function AudioMusicToggle() {
   const audio = useRef<HTMLAudioElement>(null);
   const starting = useRef(false);
   const attempt = useRef(0);

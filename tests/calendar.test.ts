@@ -9,14 +9,17 @@ const wedding: CalendarWedding = {
 };
 
 describe("wedding calendar", () => {
-  it("exports civil marriage and reception at their confirmed Kigali times and venues", () => {
+  it("exports the wedding ceremony and reception at their confirmed Kigali times and venues", () => {
     const calendar = createWeddingCalendar(weddingConfig);
     expect(calendar.match(/BEGIN:VEVENT/g)).toHaveLength(2);
     expect(calendar).toContain("DTSTART:20261217T130000Z");
-    expect(calendar).toContain("DTSTART:20261217T140000Z");
+    expect(calendar).toContain("DTSTART:20261217T143000Z");
     expect(calendar).toContain("LOCATION:Kigali City Hall");
     expect(calendar).toContain("LOCATION:Kigali Serena Hotel");
     expect(calendar).not.toMatch(/gusaba|DTEND:/i);
+    expect(calendar.split("\r\n").filter(line => /^(SUMMARY|DESCRIPTION):/.test(line)).join("\n")).not.toMatch(/civil/i);
+    // Preserve event identity for guests who saved an earlier calendar download.
+    expect(calendar).toContain("UID:civil-wedding-2026-12-17-1@");
   });
   it("exports the confirmed date as an all-day event with an exclusive next-day end", () => {
     const calendar = createWeddingCalendar(wedding, new Date("2026-11-08T12:00:00Z"));

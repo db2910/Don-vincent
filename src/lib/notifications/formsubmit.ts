@@ -1,14 +1,15 @@
 import "server-only";
 import { z } from "zod";
 import type { RSVPPayload } from "@/lib/validation/rsvp";
+import { experienceTitles } from "@/lib/experiences";
 import { weddingConfig } from "@/lib/wedding-config";
 import type { FormSubmitPreparation, FormSubmitVerification } from "@/lib/validation/formsubmit";
 const labels: Record<string, string> = {
   accepted: "Joyfully accepts", declined: "Regretfully declines",
-  yes: "Requested for planning", no: "Own arrangements", unsure: "Not sure yet",
-  breakfast: "Bed and breakfast", room_only: "Room only — no breakfast", no_preference: "No preference",
-  hotel: "Hotel", apartment: "Apartment", either: "Either is fine",
-  private: "Private room", share: "Happy to share if needed", own_group: "Sharing with own group",
+  yes: "Requested for planning", no: "Own arrangements",
+  breakfast: "Bed and breakfast", room_only: "Room only — no breakfast",
+  hotel: "Hotel", apartment: "Apartment",
+  private: "Private room", share: "Happy to share if needed",
 };
 
 /** Owner-inbox delivery was confirmed before restoring the client's recipient.
@@ -25,7 +26,7 @@ export function buildFormSubmitFields(payload: RSVPPayload, reference: string, f
     _captcha: "false", // AJAX stays on the invitation; the route retains its abuse guard.
     _honey: "",
     _url: formUrl,
-    "Celebration": "Civil Wedding · 17 December 2026 · Kigali",
+    "Celebration": "Wedding · 17 December 2026 · Kigali",
     "Guest": payload.fullName,
     "Phone or email": payload.contact,
     "Attendance": labels[payload.attendanceStatus],
@@ -33,6 +34,7 @@ export function buildFormSubmitFields(payload: RSVPPayload, reference: string, f
   // FormSubmit recognizes the email field for Reply-To; a phone is never used as email.
   if (z.email().safeParse(payload.contact).success) fields.email = payload.contact;
   if (payload.attendanceStatus === "accepted") {
+    fields["Rwanda experiences"] = experienceTitles(payload.experiences).join(", ") || "None selected";
     fields.Accommodation = labels[payload.accommodationStatus];
     if (payload.accommodationStatus === "yes") Object.assign(fields, {
       "Budget per room per night": `${payload.budgetCurrency} ${payload.budgetAmount?.toLocaleString("en-US", { maximumSignificantDigits: 21 })}`,

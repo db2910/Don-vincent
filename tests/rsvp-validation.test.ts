@@ -24,8 +24,8 @@ describe("shared RSVP validation", () => {
     expect(accommodationSchema.safeParse({ ...details, roomOccupants: 1.5 }).success).toBe(false);
   });
 
-  it("requires empty preference fields for no and unsure", () => {
-    expect(accommodationSchema.safeParse({ accommodationStatus: "unsure" }).success).toBe(true);
+  it("requires empty preference fields for guests with their own accommodation", () => {
+    expect(accommodationSchema.safeParse({ accommodationStatus: "no" }).success).toBe(true);
     expect(accommodationSchema.safeParse({ ...details, accommodationStatus: "no" }).success).toBe(false);
   });
 
@@ -43,6 +43,21 @@ describe("shared RSVP validation", () => {
     expect(rsvpSchema.safeParse({ ...guest, ...details, guestMessage: "x".repeat(1201) }).success).toBe(false);
     expect(rsvpSchema.safeParse({ ...guest, ...details, isAdmin: true }).success).toBe(false);
     expect(rsvpSchema.parse({ ...guest, ...details }).website).toBe("");
+  });
+  it("rejects the removed accommodation options", () => {
+    for (const change of [
+      { accommodationStatus: "unsure" }, { breakfastPreference: "no_preference" },
+      { accommodationType: "either" }, { sharingPreference: "own_group" },
+    ]) expect(rsvpSchema.safeParse({ ...guest, ...details, ...change }).success).toBe(false);
+  });
+  it("accepts optional multiple experiences and rejects unknown, repeated or declined selections", () => {
+    const payload = { ...guest, accommodationStatus: "no" };
+    expect(rsvpSchema.parse(payload).experiences).toEqual([]);
+    expect(rsvpSchema.parse({ ...payload, experiences: ["lake_kivu", "nyungwe_canopy"] }).experiences).toHaveLength(2);
+    for (const experiences of [["unknown"], ["lake_kivu", "lake_kivu"], "lake_kivu"]) {
+      expect(rsvpSchema.safeParse({ ...payload, experiences }).success).toBe(false);
+    }
+    expect(rsvpSchema.safeParse({ ...payload, attendanceStatus: "declined", accommodationStatus: "not_applicable", experiences: ["lake_kivu"] }).success).toBe(false);
   });
   it("accepts only the FormSubmit recipient endpoint with browser verification enabled", () => {
     const handoff = { action: "https://formsubmit.co/host%40example.test", fields: { _template: "table", Reference: "key", Guest: "Guest" } };

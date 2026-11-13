@@ -20,17 +20,62 @@ async function stay(user: User) {
   await user.type(screen.getByLabelText(/How many nights/), "3");
   await user.click(screen.getByLabelText("Bed and breakfast"));
   await user.click(screen.getByLabelText("Hotel"));
-  await user.click(screen.getByLabelText("I'll share with my own group"));
+  await user.click(screen.getByLabelText("I'm happy to share if needed"));
   await user.type(screen.getByLabelText(/How many people/), "2");
 }
 
 function stubResponse(body: object) {
-  const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => body });
+  const fetchMock = vi.fn().mockImplementation(async (url: string, options: RequestInit) => {
+    if (url.startsWith("https://formsubmit.co/")) {
+      return { ok: true, status: 200, json: async () => ({ success: "true" }) };
+    }
+    if (!("submitted" in body)) return { ok: true, status: 200, json: async () => body };
+    const reference = (options.headers as Record<string, string>)["Idempotency-Key"];
+    const fields = { _template: "table", Reference: reference };
+    return { ok: true, status: 200, json: async () => ({
+      reference,
+      delivery: { action: "https://formsubmit.co/ajax/host%40example.test", fields: { ...fields, _captcha: "false" } },
+      verification: { action: "https://formsubmit.co/host%40example.test", fields },
+    }) };
+  });
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
 }
 
 describe("RSVP guest journey", { timeout: 15_000 }, () => {
+  it("selects multiple experiences before the message and preserves interests across attendance changes", async () => {
+    const user = userEvent.setup();
+    const fetchMock = stubResponse({ submitted: true });
+    render(<RSVPForm whatsappNumber="250788408241" />);
+    await guest(user);
+    await user.click(screen.getByLabelText("No, I have my own arrangements"));
+    const lake = screen.getByRole("checkbox", { name: "Lake Kivu escape" });
+    const forest = screen.getByRole("checkbox", { name: "Nyungwe canopy walk" });
+    await user.click(lake);
+    await user.click(forest);
+    expect(lake).toBeChecked(); expect(forest).toBeChecked();
+    expect(lake.compareDocumentPosition(screen.getByLabelText(/A message for the couple/)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(decodeURIComponent(screen.getByRole("link", { name: /RSVP via WhatsApp/ }).getAttribute("href")!)).toContain("Rwanda experiences: Lake Kivu escape, Nyungwe canopy walk");
+    await user.click(screen.getByLabelText("Regretfully declines"));
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    expect(decodeURIComponent(screen.getByRole("link", { name: /RSVP via WhatsApp/ }).getAttribute("href")!)).not.toContain("Lake Kivu");
+    await user.click(screen.getByLabelText("Joyfully accepts"));
+    expect(screen.getByRole("checkbox", { name: "Lake Kivu escape" })).toBeChecked();
+    await user.click(screen.getByRole("checkbox", { name: "Lake Kivu escape" }));
+    await user.click(screen.getByRole("button", { name: /Send My RSVP/ }));
+    await screen.findByText("Your reply has been submitted");
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).experiences).toEqual(["nyungwe_canopy"]);
+    await user.click(screen.getByText("View your submitted reply"));
+    expect(screen.getByText("Rwanda experiences")).toBeVisible();
+  });
+  it("offers only the confirmed accommodation choices", async () => {
+    const user = userEvent.setup();
+    render(<RSVPForm whatsappNumber={null} />);
+    await guest(user); await user.click(screen.getByLabelText("Yes"));
+    for (const label of ["I'm not sure yet", "No preference", "Either is fine", "I'll share with my own group"]) {
+      expect(screen.queryByLabelText(label)).not.toBeInTheDocument();
+    }
+  });
   it("shows one continuous form and links accessible validation errors to the fields", async () => {
     const user = userEvent.setup();
     render(<RSVPForm whatsappNumber={null} />);
@@ -65,7 +110,7 @@ describe("RSVP guest journey", { timeout: 15_000 }, () => {
     expect(options.headers["Idempotency-Key"]).toMatch(/^[a-f\d-]{36}$/i);
   });
 
-  it.each(["No, I have my own arrangements", "I'm not sure yet"])("does not require stay preferences for %s", async (choice) => {
+  it.each(["No, I have my own arrangements"])("does not require stay preferences for %s", async (choice) => {
     const user = userEvent.setup();
     const fetchMock = stubResponse({ submitted: true, reference: "test-rsvp-reference" });
     render(<RSVPForm whatsappNumber={null} />);
@@ -77,7 +122,7 @@ describe("RSVP guest journey", { timeout: 15_000 }, () => {
     await user.click(screen.getByRole("button", { name: /Send My RSVP/ }));
     await screen.findByText("Your reply has been submitted");
     const payload = JSON.parse(fetchMock.mock.calls[0][1].body);
-    expect(payload.accommodationStatus).toBe(choice.startsWith("No,") ? "no" : "unsure");
+    expect(payload.accommodationStatus).toBe("no");
     expect(payload.budgetAmount).toBeNull();
     expect(payload.nights).toBeNull();
     expect(payload.roomOccupants).toBeNull();
@@ -111,7 +156,7 @@ describe("RSVP guest journey", { timeout: 15_000 }, () => {
     expect(screen.getByLabelText(/Budget per room per night/)).toHaveValue(180000);
     expect(screen.getByRole("button", { name: /RSVP sent/ })).toBeDisabled();
     fireEvent.submit(screen.getByRole("form", { name: "Wedding RSVP" }));
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     await user.click(screen.getByText("View your submitted reply"));
     expect(screen.getByText("RWF 180,000")).toBeVisible();
   });

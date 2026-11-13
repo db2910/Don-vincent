@@ -15,6 +15,9 @@ function preparedReply(route: Route) {
 test.beforeEach(async ({page, context}) => {
   const errors: string[] = []; pageErrors.set(page,errors);
   page.on("pageerror", error => errors.push(error.message));
+  // Keep layout/envelope checks independent of third-party video timing.
+  // Player states and failures have unit coverage; live playback is checked separately.
+  await page.route('https://www.youtube.com/iframe_api', route => route.abort());
   // All browser submissions are fixtures, including on machines configured for live email.
   await page.route("**/api/rsvp", route => route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(preparedReply(route))}));
   await context.route('https://formsubmit.co/**', route => route.fulfill({status:200,headers:corsHeaders,contentType:'application/json',body:JSON.stringify({success:'true'})}));
@@ -43,7 +46,8 @@ test("refresh covers the restored section before JavaScript loads", async ({ pag
     const covered = await page.evaluate(() => [[1, 1], [innerWidth / 2, innerHeight / 2], [innerWidth - 2, innerHeight - 2]]
       .every(([x, y]) => !!document.elementFromPoint(x, y)?.closest(".envelope-dialog")));
     expect(covered).toBe(true);
-    await page.screenshot({ path: "test-results/envelope-before-javascript.png" });
+    // Avoid injecting caret styles into server HTML before React hydrates.
+    await page.screenshot({ path: "test-results/envelope-before-javascript.png", caret: "initial" });
   } finally { releaseScripts(); }
   await expect.poll(() => page.locator(".envelope-dialog").evaluate(element => element.matches(":modal"))).toBe(true);
   await page.getByRole("button", { name: "Skip introduction" }).click();
@@ -116,32 +120,19 @@ test('the opening click requests music within the browser user gesture, once',as
   await page.emulateMedia({reducedMotion:'reduce'});await page.goto('/');await page.getByRole('button',{name:'Open your invitation',exact:true}).click();expect(await page.evaluate(()=>(window as unknown as {musicGesture:boolean[]}).musicGesture)).toEqual([true]);
 });
 
-test('the supplied Perfect MP3 actually plays, pauses and resumes from the floating control', async({page})=>{
-  await page.goto('/');
-  await page.getByRole('button',{name:'Open your invitation',exact:true}).click();
-  await expect(page.locator('.envelope-dialog')).not.toBeVisible({timeout:10000});
-  const audio=page.locator('audio');
-  await expect(audio).toHaveAttribute('src','/audio/perfect.mp3');
-  await expect.poll(()=>audio.evaluate((element:HTMLAudioElement)=>element.currentTime)).toBeGreaterThan(0);
-  await expect(page.getByRole('button',{name:'Pause wedding music'})).toBeVisible();
-  await page.getByRole('button',{name:'Pause wedding music'}).click();
-  await expect.poll(()=>audio.evaluate((element:HTMLAudioElement)=>element.paused)).toBe(true);
-  await page.getByRole('button',{name:'Play wedding music'}).click();
-  await expect.poll(()=>audio.evaluate((element:HTMLAudioElement)=>element.paused)).toBe(false);
-});
-
-test('civil itinerary matches the confirmed programme and refresh at RSVP reopens the envelope', async({page})=>{
+test('wedding itinerary matches the confirmed programme and refresh at RSVP reopens the envelope', async({page})=>{
   await enter(page);
   const itinerary=page.locator('#itinerary');
   await expect(itinerary.getByRole('heading',{name:'The Itinerary'})).toBeVisible();
   await expect(itinerary.locator('li')).toHaveCount(2);
   await expect(itinerary.locator('li').first()).toContainText('3:00 PM');
-  await expect(itinerary.locator('li').first()).toContainText('Civil Marriage');
+  await expect(itinerary.locator('li').first()).toContainText('Wedding Ceremony');
   await expect(itinerary.locator('li').first()).toContainText('Kigali City Hall');
-  await expect(itinerary.locator('li').last()).toContainText('4:00 PM');
+  await expect(itinerary.locator('li').last()).toContainText('4:30 PM');
   await expect(itinerary.locator('li').last()).toContainText('Kigali Serena Hotel');
   await expect(page.locator('body')).not.toContainText(/Gusaba/i);
-  await expect(page).toHaveTitle(/Civil Wedding Invitation/);
+  await expect(page).toHaveTitle(/Wedding Invitation/);
+  await expect(page.locator('main')).not.toContainText(/civil|4:00 PM/i);
   await page.locator('#rsvp').scrollIntoViewIfNeeded();
   await page.evaluate(()=>history.replaceState(history.state,'','#rsvp'));
   await page.reload();
@@ -151,7 +142,33 @@ test('civil itinerary matches the confirmed programme and refresh at RSVP reopen
   await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBe(0);
 });
 
-for(const choice of ['yes','no','unsure','declined']) {
+test('experience cards allow multiple interests, keyboard selection and an accurate submitted reply', async ({ page }) => {
+  let submitted: Record<string, unknown> | undefined;
+  await page.route('**/api/rsvp', async route => {
+    submitted = route.request().postDataJSON();
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(preparedReply(route))});
+  });
+  await enter(page); await guest(page);
+  await page.getByRole('radio', { name: 'Joyfully accepts' }).check();
+  await page.getByRole('radio', { name: 'No, I have my own arrangements' }).check();
+  const cards = page.locator('.rsvp-experience-card');
+  await expect(cards).toHaveCount(4);
+  await cards.first().click();
+  const forest = page.getByRole('checkbox', { name: 'Nyungwe canopy walk' });
+  await forest.focus(); await page.keyboard.press('Space');
+  await expect(forest).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: 'Lake Kivu escape' })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: 'Akagera safari' })).not.toBeChecked();
+  expect(await page.locator('#rsvp-experiences').evaluate(el => !!(el.compareDocumentPosition(document.getElementById('rsvp-guestMessage')!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
+  expect(decodeURIComponent((await page.getByRole('link', { name: /RSVP via WhatsApp/ }).getAttribute('href'))!)).toContain('Lake Kivu escape, Nyungwe canopy walk');
+  await page.getByRole('button', { name: 'Send My RSVP' }).click();
+  await expect(page.locator('#rsvp').getByRole('status')).toContainText('Your reply has been submitted');
+  expect(submitted?.experiences).toEqual(['lake_kivu', 'nyungwe_canopy']);
+  await page.getByText('View your submitted reply').click();
+  await expect(page.locator('.rsvp-review')).toContainText('Lake Kivu escape, Nyungwe canopy walk');
+});
+
+for(const choice of ['yes','no','declined']) {
   test(`continuous RSVP reveals only applicable fields for ${choice}`,async({page})=>{
     let submitted:Record<string,unknown>|undefined;
     await page.unroute('**/api/rsvp');await page.route('**/api/rsvp',async route=>{submitted=route.request().postDataJSON();await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(preparedReply(route))});});
@@ -160,9 +177,9 @@ for(const choice of ['yes','no','unsure','declined']) {
     if(choice==='declined') await expect(page.getByRole('group',{name:'Will you need accommodation?'})).toHaveCount(0);
     else {
       await expect(page.getByRole('group',{name:/Will you need accommodation/})).toBeVisible();
-      await page.getByRole('radio',{name:choice==='yes'?'Yes':choice==='no'?'No, I have my own arrangements':"I'm not sure yet",exact:true}).check();
+      await page.getByRole('radio',{name:choice==='yes'?'Yes':'No, I have my own arrangements',exact:true}).check();
       if(choice==='yes') {
-        await page.locator('#rsvp-budgetCurrency').selectOption('RWF');await page.locator('#rsvp-budgetAmount').fill('35000');await page.locator('#rsvp-nights').fill('3');await page.getByRole('radio',{name:'Bed and breakfast',exact:true}).check();await page.getByRole('radio',{name:'Either is fine',exact:true}).check();await page.getByRole('radio',{name:'I prefer a private room',exact:true}).check();await page.locator('#rsvp-roomOccupants').fill('2');
+        await page.locator('#rsvp-budgetCurrency').selectOption('RWF');await page.locator('#rsvp-budgetAmount').fill('35000');await page.locator('#rsvp-nights').fill('3');await page.getByRole('radio',{name:'Bed and breakfast',exact:true}).check();await page.getByRole('radio',{name:'Hotel',exact:true}).check();await page.getByRole('radio',{name:'I prefer a private room',exact:true}).check();await page.locator('#rsvp-roomOccupants').fill('2');
       } else await expect(page.locator('#rsvp-budgetAmount')).toHaveCount(0);
     }
     await page.locator('#rsvp-guestMessage').fill('With love from this test fixture.');await expect(page.getByRole('button',{name:'Continue',exact:true})).toHaveCount(0);await expect(page.getByRole('link',{name:/RSVP via WhatsApp/})).toHaveAttribute('href',/^https:\/\/wa\.me\/250788408241\?text=/);await expect(page.getByText(/RSVP preview|once the hosts add their contact number/)).toHaveCount(0);
@@ -175,7 +192,7 @@ test('RSVP preserves conditional values and retains one reference after an activ
   let requests=0;const keys:string[]=[];
   await page.route('**/api/rsvp',async route=>{keys.push(route.request().headers()['idempotency-key']);await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(preparedReply(route))});});
   await context.route('https://formsubmit.co/ajax/**',async route=>{if(route.request().method()!=='OPTIONS')requests++;await route.fulfill({status:200,headers:corsHeaders,contentType:'application/json',body:JSON.stringify(requests===1?{success:'false',message:'This form needs Activation. Private provider details'}:{success:'true'})});});
-  await enter(page);await guest(page);await page.getByRole('radio',{name:'Joyfully accepts'}).check();await page.getByRole('radio',{name:'Yes',exact:true}).check();await page.locator('#rsvp-budgetAmount').fill('120');await page.getByRole('radio',{name:"I'm not sure yet",exact:true}).check();await expect(page.locator('#rsvp-budgetAmount')).toHaveCount(0);await page.getByRole('radio',{name:'Yes',exact:true}).check();await expect(page.locator('#rsvp-budgetAmount')).toHaveValue('120');await page.getByRole('radio',{name:'No, I have my own arrangements',exact:true}).check();
+  await enter(page);await guest(page);await page.getByRole('radio',{name:'Joyfully accepts'}).check();await page.getByRole('radio',{name:'Yes',exact:true}).check();await page.locator('#rsvp-budgetAmount').fill('120');await page.getByRole('radio',{name:"No, I have my own arrangements",exact:true}).check();await expect(page.locator('#rsvp-budgetAmount')).toHaveCount(0);await page.getByRole('radio',{name:'Yes',exact:true}).check();await expect(page.locator('#rsvp-budgetAmount')).toHaveValue('120');await page.getByRole('radio',{name:'No, I have my own arrangements',exact:true}).check();
   await page.getByRole('button',{name:'Send My RSVP'}).click();await expect(page.locator('#rsvp').getByRole('alert')).toContainText('awaiting confirmation from the hosts');await expect(page.getByRole('link',{name:/RSVP via WhatsApp/})).toHaveAttribute('href',/^https:\/\/wa\.me\/250788408241\?text=/);await expect(page.locator('#rsvp-fullName')).toHaveValue('Test Guest');await page.getByRole('button',{name:'Try Again'}).click();await expect(page.getByRole('status')).toContainText('Your reply has been submitted');await expect(page.locator('#rsvp-fullName')).toBeDisabled();expect(keys).toHaveLength(2);expect(keys[0]).toBe(keys[1]);
 });
 
@@ -245,12 +262,12 @@ test('untrusted or mismatched preparation never sends data to the provider', asy
   expect(providerRequests).toBe(0);
 });
 
-test('editorial gallery supports arrows, swipe, focus trapping and Escape restoration; calendar includes both civil wedding events',async({page})=>{
+test('editorial gallery supports arrows, swipe, focus trapping and Escape restoration; calendar includes both wedding events',async({page})=>{
   await enter(page);const trigger=page.locator('#moments button').first();await trigger.click();const modal=page.getByRole('dialog');await expect(modal).toBeVisible();
   const original=await modal.locator('img').getAttribute('src');await page.keyboard.press('ArrowRight');await expect(modal.locator('img')).not.toHaveAttribute('src',original!);await modal.getByRole('button',{name:'Next photograph'}).click();
   const beforeSwipe=await modal.locator('img').getAttribute('src');await modal.locator('img').evaluate(element=>{const target=element.parentElement!;const touch=(x:number)=>new Touch({identifier:1,target,clientX:x,clientY:100});target.dispatchEvent(new TouchEvent('touchstart',{bubbles:true,changedTouches:[touch(220)]}));target.dispatchEvent(new TouchEvent('touchend',{bubbles:true,changedTouches:[touch(50)]}));});await expect(modal.locator('img')).not.toHaveAttribute('src',beforeSwipe!);
   await modal.getByRole('button',{name:'Close photograph'}).focus();await page.keyboard.press('Shift+Tab');await expect(modal.getByRole('button',{name:'Next photograph'})).toBeFocused();await page.keyboard.press('Escape');await expect(trigger).toBeFocused();
-  const download=page.waitForEvent('download');await page.getByRole('button',{name:/add to calendar/i}).click();const file=await download;expect(file.suggestedFilename()).toMatch(/\.ics$/);const calendar=await readFile((await file.path())!,'utf8');expect(calendar).toContain('DTSTART:20261217T130000Z');expect(calendar).toContain('DTSTART:20261217T140000Z');expect(calendar.match(/BEGIN:VEVENT/g)).toHaveLength(2);
+  const download=page.waitForEvent('download');await page.getByRole('button',{name:/add to calendar/i}).click();const file=await download;expect(file.suggestedFilename()).toMatch(/\.ics$/);const calendar=await readFile((await file.path())!,'utf8');expect(calendar).toContain('DTSTART:20261217T130000Z');expect(calendar).toContain('DTSTART:20261217T143000Z');expect(calendar.match(/BEGIN:VEVENT/g)).toHaveLength(2);
 });
 
 test('venue map is optional and keeps directions available when the provider fails',async({page})=>{
@@ -264,6 +281,13 @@ for(const viewport of viewports) {
     await page.waitForTimeout(950);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:`test-results/invitation-${viewport.width}.png`,fullPage:true});await page.screenshot({path:`test-results/hero-${viewport.width}.png`});
     if(viewport.width<=800) { await page.getByRole('button',{name:'Open navigation'}).click();await page.getByRole('link',{name:'The venue',exact:true}).click();await expect(page.locator('#venue')).toBeInViewport();await expect(page.getByRole('button',{name:'Open navigation'})).toHaveAttribute('aria-expanded','false'); }
     await page.getByRole('radio',{name:'Joyfully accepts'}).check();await page.getByRole('radio',{name:'Yes',exact:true}).check();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    await expect(page.getByRole('checkbox', {name:'Lake Kivu escape'})).toBeVisible();
+    await page.getByRole('checkbox', {name:'Lake Kivu escape'}).check();
+    await page.getByRole('checkbox', {name:'Nyungwe canopy walk'}).check();
+    await page.locator('#rsvp-experiences').scrollIntoViewIfNeeded();
+    await expect.poll(() => page.locator('.rsvp-experience-photo img').evaluateAll(images => images.every(image => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
+    await page.screenshot({path:`test-results/experiences-${viewport.width}.png`});
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     expect(await page.locator('label[for="rsvp-fullName"]').evaluate(el=>parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(16);
     if(viewport.width<701) expect(await page.locator('#home picture img').evaluate((el:HTMLImageElement)=>el.currentSrc)).toContain('couple.jpeg');
   });

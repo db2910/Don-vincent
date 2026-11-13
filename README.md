@@ -1,6 +1,6 @@
 # Shee Salamata & Don Vincent
 
-An Enhanced Classic Royal Civil Wedding invitation, built with Next.js App Router, strict TypeScript, Tailwind CSS, Motion, Zod and FormSubmit. Thursday, **17 December 2026**: civil marriage at **Kigali City Hall, 3:00 PM**, followed by the reception at **Kigali Serena Hotel, 4:00 PM**, Africa/Kigali.
+An Enhanced Classic Royal Wedding invitation, built with Next.js App Router, strict TypeScript, Tailwind CSS, Motion, Zod and FormSubmit. Thursday, **17 December 2026**: wedding ceremony at **Kigali City Hall, 3:00 PM**, followed by the reception at **Kigali Serena Hotel, 4:30 PM**, Africa/Kigali.
 
 ## Run locally
 
@@ -20,7 +20,7 @@ See [the current hero, envelope and RSVP update](docs/HERO_AND_EMAIL_UPDATE.md) 
 
 Edit [`src/lib/wedding-config.ts`](src/lib/wedding-config.ts). It is the typed source of truth for names, date, venue, timezone, ceremony times, optional story/programme, photos, music and configuration status. Unconfirmed values are `null` or empty arrays.
 
-The hero uses the original `public/images/couple.jpeg` on both phones and desktop screens, with a dark graduated overlay for readable copy. Its countdown targets the confirmed civil marriage at 3:00 PM in Kigali (13:00 UTC) on 17 December. The itinerary includes the reception at 4:00 PM. The calendar download contains two correctly timed events with their own venues; no unconfirmed end time is invented. Every full page load or refresh presents the envelope again, and completing or skipping it returns to the hero.
+The hero uses the original `public/images/couple.jpeg` on both phones and desktop screens, with a dark graduated overlay for readable copy. Its countdown targets the confirmed wedding ceremony at 3:00 PM in Kigali (13:00 UTC) on 17 December. The itinerary includes the reception at 4:30 PM. The calendar download contains two correctly timed events with their own venues; no unconfirmed end time is invented. Every full page load or refresh presents the envelope again, and completing or skipping it returns to the hero.
 
 No dress code, family names, guest deadline, relationship history or accommodation prices have been invented. Supply approved details before enabling the relevant sections. See [`docs/CLIENT_DETAILS_PENDING.md`](docs/CLIENT_DETAILS_PENDING.md).
 
@@ -42,7 +42,7 @@ Five newly supplied photographs are now used from `public/images/moments/`, alon
 
 All nine original added photos remain unchanged in `client-assets/pending-review/`, outside the public web root and ignored by Git. Five suitable photographs were copied with identical content and original filenames into the invitation; unrelated or sensitive compositions are not included. Add future approved photographs to configuration without duplicating gallery entries.
 
-The supplied `public/audio/perfect.mp3` is connected as **Perfect — Ed Sheeran**. The floating play/pause control includes the track title. Opening the envelope requests playback synchronously from that click/tap/key interaction, preserving the browser user gesture; page load and Skip do not start playback. Rejected playback shows a manual retry control. The single audio instance follows real play/pause/error events and stays mounted while scrolling. It hides while a form field has focus to keep typing clear.
+The soundtrack is **Intashyo — Chacha Imfurikeye ft. Fox Makare**, using the client’s [YouTube video](https://www.youtube.com/watch?v=5jfgdZlA7Pk). Opening the envelope or pressing Play loads the official YouTube IFrame API and a visible player. Page load and Skip do not start playback. Play/pause follows actual player events; closing stops playback. Browser autoplay restrictions show a prompt to tap the video, and provider errors retain a direct YouTube link. The previous local MP3 remains available as an unused asset; configuring `music.src` without `youtubeVideoId` uses the native audio player.
 
 ## WhatsApp and sharing
 
@@ -96,13 +96,16 @@ src/lib/notifications/       FormSubmit preparation, browser delivery and abuse 
 tests/                       Unit, API and browser verification
 docs/                        Requirements, design, animation, data and handoff
 public/images/               Original photograph and five added photographs
-public/audio/                Supplied Perfect MP3
+public/images/experiences/   Optimized Rwanda activity photographs
+public/audio/                Previous soundtrack asset (unused)
 ```
 
 ## Current guest experience
 
 Every full load starts with an ivory envelope already present in the server-rendered page, covering restored scroll positions before JavaScript loads. Opening or skipping starts at the hero. Without JavaScript, the envelope is hidden and wedding details remain readable.
 
-The hero uses `couple.jpeg` on phones and large screens. Desktop framing is bounded independently of the hero's text, removing the previous extra zoom and keeping both faces above the invitation copy. Desktop navigation remains available. The countdown targets the confirmed civil marriage at 3:00 PM in Kigali.
+The hero uses `couple.jpeg` on phones and large screens. Desktop framing is bounded independently of the hero's text, removing the previous extra zoom and keeping both faces above the invitation copy. Desktop navigation remains available. The countdown targets the confirmed wedding ceremony at 3:00 PM in Kigali.
 
 RSVP is one continuous form. Attendance reveals the applicable accommodation question; Yes reveals stay preferences. Values survive toggling, inactive details are cleared from the payload, and responses appear inline. Success means FormSubmit accepted the submission. The form has no preview/test branch and unavailable WhatsApp controls are hidden.
+
+Guests attending the wedding can choose any number of four Rwanda experiences before writing their message. These interests appear in the submitted review, prepared WhatsApp message, and both FormSubmit delivery paths. The form offers only definite accommodation choices. See [the invitation update](docs/INVITATION_EXPERIENCES_UPDATE.md) for sources and verification.

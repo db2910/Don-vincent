@@ -10,6 +10,14 @@ const reference = "f9918d32-7358-4cd8-97df-9154e3c79868";
 beforeEach(() => vi.stubEnv("FORMSUBMIT_RECIPIENT", "client@example.test"));
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 describe("FormSubmit preparation", () => {
+  it("includes readable experience choices in both delivery and verification", () => {
+    const prepared = prepareFormSubmit({ ...payload, experiences: ["lake_kivu", "nyungwe_canopy"] }, reference, "client@example.test", formUrl);
+    expect(formSubmitPreparationSchema.safeParse(prepared).success).toBe(true);
+    for (const handoff of [prepared.delivery, prepared.verification]) {
+      expect(handoff.fields["Rwanda experiences"]).toBe("Lake Kivu escape, Nyungwe canopy walk");
+      expect(handoff.fields.Celebration).not.toMatch(/civil/i);
+    }
+  });
   it("prepares matching AJAX and CAPTCHA endpoints without a server email request", () => {
     const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
     const prepared = prepareFormSubmit(payload, reference, getFormSubmitDestination()!, formUrl);

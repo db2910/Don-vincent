@@ -91,13 +91,13 @@ export function createWeddingCalendar(config: CalendarWedding, now = new Date())
       `DTSTART:${utcCalendarDate(zonedDateTime(config.date, event.time, config.timezone))}`,
       `SUMMARY:${escapeCalendarText(`${config.names.combined} — ${event.title}`)}`,
       `LOCATION:${escapeCalendarText(event.location)}`,
-      `DESCRIPTION:${escapeCalendarText(event.description ?? "Celebrate our civil wedding with us.")}`,
+      `DESCRIPTION:${escapeCalendarText(event.description ?? "Celebrate our wedding with us.")}`,
       "STATUS:CONFIRMED", "TRANSP:TRANSPARENT", "END:VEVENT",
     ]) : ["BEGIN:VEVENT", `UID:civil-wedding-${config.date}@shee-salamata-don-vincent.invitation`,
     `DTSTAMP:${utcCalendarDate(now)}`, ...eventDates,
-    `SUMMARY:${escapeCalendarText(`${config.names.combined} — Civil Wedding`)}`,
+    `SUMMARY:${escapeCalendarText(`${config.names.combined} — Wedding`)}`,
     `LOCATION:${escapeCalendarText(config.venue.name)}`,
-    `DESCRIPTION:${escapeCalendarText("Together with our families, we joyfully invite you to celebrate our Civil Wedding.")}`,
+    `DESCRIPTION:${escapeCalendarText("Together with our families, we joyfully invite you to celebrate our Wedding.")}`,
     "STATUS:CONFIRMED", "TRANSP:TRANSPARENT", "END:VEVENT"]), "END:VCALENDAR",
   ].map(foldCalendarLine).join("\r\n") + "\r\n";
 }
