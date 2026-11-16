@@ -1,35 +1,44 @@
-# Invitation and Rwanda experiences update
+# Discover Rwanda and enhanced photographs
 
-Requested changes:
+Owner feedback implemented on 16 November 2026:
 
-- The soundtrack is Intashyo — Chacha Imfurikeye ft. Fox Makare, using the client-supplied MP3 in `public/audio/`.
-- Reception starts at **4:30 PM, Africa/Kigali**, including invitation copy, itinerary, calendar, venue, and sharing metadata. Ceremony remains at 3:00 PM.
-- Guest-facing wording uses Wedding / Wedding Ceremony. Existing calendar UIDs are retained so earlier downloads refer to the same events.
-- Removed “I'm not sure yet”, “No preference”, “Either is fine”, and “I'll share with my own group” from both form options and server validation.
-- Attending guests can select multiple optional Rwanda experiences before the couple's message. Interests survive local attendance toggles, are omitted when declining, and appear in the review, WhatsApp text, AJAX email fields and CAPTCHA fallback fields.
+- Added a standalone Travel & Accommodation section, then Discover Rwanda, then the wedding RSVP.
+- Featured gorilla trekking in Volcanoes National Park, Akagera safari, the Kigali Genocide Memorial, and outdoor adventures in the requested order. Cards use two columns on desktop and one on phones, short descriptions, location/time information, and Explore Experience links.
+- Removed experience checkboxes, form state, validation fields, email fields and WhatsApp fields. Travel planning is independent of wedding attendance.
+- Retained the bold, contrasting Visit Rwanda guide link in the new Planning Your Stay panel.
+- Added navigation links for Travel & stay and Discover Rwanda. The compact menu now starts at 1200px to fit the additional links without reducing their text size.
 
-## Soundtrack
+## Official destination references
 
-Opening the envelope calls native audio playback synchronously within the opening click or key event. One looping audio element stays mounted while guests browse. The floating control pauses and resumes the same track, and failed playback offers a manual retry. Page load and Skip do not start music. The client-supplied file is preserved with its original filename. The YouTube player, API loader, video-window styles and obsolete tests have been removed.
+Checked on 16 November 2026:
 
-“Explore Rwanda with Visit Rwanda” is now a 22px bold link with a contrasting ivory-gold background, gold border, generous padding and a visible keyboard focus outline. It wraps within narrow mobile screens.
+- Gorilla trekking: https://visitrwandabookings.rdb.rw/rdbportal/mountain-gorilla-tracking
+- Akagera: https://visitrwanda.com/destinations/akagera-national-park-2/
+- Kigali Genocide Memorial: https://kgm.rw/visit/
+- Outdoor adventure information: https://visitrwanda.com/tourism/interests/sports-adventure/
+- Travel information: https://visitrwanda.com/practical-information/
+- General inspiration: https://visitrwanda.com/
 
-## Experiences and images
+Gorilla trekking is labelled Volcanoes National Park, Rwanda. Duration suggestions come from the owner's approved brief; they are not fixed itineraries. No prices, departures or guaranteed wildlife sightings are promised. The adventure card links to general Visit Rwanda information, with no individual activity booking links.
 
-Activity ideas and photographs are from [Visit Rwanda's experiences guide](https://visitrwanda.com/three-day-experiences/). No trip dates, prices, included services or confirmed bookings are promised. Guests express interest; arrangements and costs are shared separately.
+## Photo mapping
 
-Images are resized to 640 × 400 WebP, served locally with Next Image, and used decoratively inside cards labelled by activity. Original sources:
+The enhanced landscape photograph `WhatsApp Image 2026-11-16 at 10.42.17.jpeg` replaces the earlier indoor white-and-gold portrait in the gallery and is the main couple-feature photo. The enhanced embracing portrait `WhatsApp Image 2026-11-16 at 10.42.17 (1).jpeg` appears in the gallery and is the smaller couple-feature photo; its older version stays unused. The caption reserves space beside the smaller portrait. The hero remains `couple.jpeg`, which has no matching enhanced upload. Supplied assets and original filenames remain intact; older files remain available but the replaced shots are not repeated in the gallery.
 
-- Lake Kivu: https://visitrwanda.com/wp-content/uploads/2018/08/Visit-Rwanda-Karongi-Lake-Kivu-at-Sunset-1.jpg
-- Akagera: https://visitrwanda.com/wp-content/uploads/2026/03/Boat-Safari-in-Akagera-National-Park-with-Magashi-Camp-by-Wilderness-Safaris1.jpg
-- Nyungwe: https://visitrwanda.com/wp-content/uploads/2022/05/OO_NyungweHouse_Lifestyle_Canopy_Walk_0019B_UPDATE_MASTER-1024x683.jpg
+Activity image sources:
+
 - Gorillas: https://visitrwanda.com/wp-content/uploads/2026/03/Amahoro-Gorilla-group-1-1-1024x576.jpg
+- Akagera: https://visitrwanda.com/wp-content/uploads/2026/03/Boat-Safari-in-Akagera-National-Park-with-Magashi-Camp-by-Wilderness-Safaris1.jpg
+- Memorial gardens: https://kgm.rw/wp-content/uploads/2023/05/Memorial-Gardens-26512247736_72419c6fb6_o-scaled-e1685962601420.webp
+- Zipline photography: https://www.fazenda.rw/web/image/22315-50b49dc8/ZIPLINE1.webp
+
+Images are served locally as optimized WebP assets with descriptive alt text. The zipline photograph shows the activity; it does not imply that the wedding hosts have selected a provider.
 
 ## Verification
 
-Existing native-audio tests cover user-gesture playback, rejected playback, retries and synchronization with real media events. The browser playback scenario uses the actual supplied MP3 and verifies that opening starts playback, pause/resume preserves position, and no video or YouTube requests appear. Responsive checks cover the larger guide link on narrow phones and desktop. Automated RSVP requests remain intercepted and do not send email.
+Automated RSVP tests intercept preparation and delivery requests and send no email. Tests verify that travel interests are absent from the RSVP, email and WhatsApp reply, and that Discover Rwanda links and section placement work independently of the form. Native audio and gallery checks protect the existing invitation behavior.
 
 - 71 unit and integration tests passed across nine files.
-- ESLint and the production build passed, including the build's TypeScript checks.
-- Seven targeted Chrome browser checks passed: envelope lifecycle, skip/Escape/reduced-motion behavior, synchronous music requests, actual MP3 playback and pause/resume, and 320px, 390px and 1440px layouts.
-- Updated [desktop](screenshots/experiences/desktop.png) and [mobile](screenshots/experiences/mobile.png) previews show the guide link at 22px and font weight 700 without horizontal overflow.
+- 12 targeted browser checks passed, covering section placement, official links, RSVP submission for all attendance/accommodation branches, native MP3 playback, gallery/lightbox/calendar behavior, and six responsive layouts (320, 390, 768, 1024, 1440 and 844px).
+- ESLint and the production build passed, including TypeScript validation.
+- Production smoke checks at 1440px and 390px verified both enhanced images load, no form checkboxes remain, no horizontal overflow, and no browser console errors. [Discover Rwanda desktop](screenshots/experiences/desktop.png), [mobile](screenshots/experiences/mobile.png), and [enhanced couple feature](screenshots/experiences/enhanced-couple-mobile.png) previews are included.

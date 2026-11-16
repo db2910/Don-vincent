@@ -50,14 +50,10 @@ describe("shared RSVP validation", () => {
       { accommodationType: "either" }, { sharingPreference: "own_group" },
     ]) expect(rsvpSchema.safeParse({ ...guest, ...details, ...change }).success).toBe(false);
   });
-  it("accepts optional multiple experiences and rejects unknown, repeated or declined selections", () => {
+  it("keeps travel interests outside the RSVP schema", () => {
     const payload = { ...guest, accommodationStatus: "no" };
-    expect(rsvpSchema.parse(payload).experiences).toEqual([]);
-    expect(rsvpSchema.parse({ ...payload, experiences: ["lake_kivu", "nyungwe_canopy"] }).experiences).toHaveLength(2);
-    for (const experiences of [["unknown"], ["lake_kivu", "lake_kivu"], "lake_kivu"]) {
-      expect(rsvpSchema.safeParse({ ...payload, experiences }).success).toBe(false);
-    }
-    expect(rsvpSchema.safeParse({ ...payload, attendanceStatus: "declined", accommodationStatus: "not_applicable", experiences: ["lake_kivu"] }).success).toBe(false);
+    expect(rsvpSchema.parse(payload)).not.toHaveProperty("experiences");
+    expect(rsvpSchema.safeParse({ ...payload, experiences: ["gorilla-trekking"] }).success).toBe(false);
   });
   it("accepts only the FormSubmit recipient endpoint with browser verification enabled", () => {
     const handoff = { action: "https://formsubmit.co/host%40example.test", fields: { _template: "table", Reference: "key", Guest: "Guest" } };

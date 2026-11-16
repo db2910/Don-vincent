@@ -5,8 +5,6 @@ import { rsvpSchema, type RSVPPayload } from "@/lib/validation/rsvp";
 import { isRsvpFailureCode, rsvpFailureMessages } from "@/lib/rsvp-errors";
 import { formSubmitPreparationSchema, type FormSubmitVerification } from "@/lib/validation/formsubmit";
 import { deliverFormSubmit } from "@/lib/notifications/formsubmit-browser";
-import { experienceTitles, type RwandaExperienceId } from "@/lib/experiences";
-import ExperienceChoices from "./ExperienceChoices";
 import "./rsvp.css";
 
 type FormValues = {
@@ -21,7 +19,6 @@ type FormValues = {
   accommodationType: string;
   sharingPreference: string;
   roomOccupants: string;
-  experiences: RwandaExperienceId[];
   guestMessage: string;
   website: string;
 };
@@ -32,7 +29,7 @@ type Props = { whatsappNumber: string | null; deadline?: string | null };
 const initialValues: FormValues = {
   fullName: "", contact: "", attendanceStatus: "", accommodationStatus: "",
   budgetCurrency: "USD", budgetAmount: "", nights: "", breakfastPreference: "",
-  accommodationType: "", sharingPreference: "", roomOccupants: "", experiences: [], guestMessage: "", website: "",
+  accommodationType: "", sharingPreference: "", roomOccupants: "", guestMessage: "", website: "",
 };
 
 const choices = {
@@ -62,7 +59,6 @@ function payloadFrom(values: FormValues) {
     accommodationType: needsStay ? values.accommodationType || null : null,
     sharingPreference: needsStay ? values.sharingPreference || null : null,
     roomOccupants: needsStay ? numeric(values.roomOccupants) : null,
-    experiences: attending ? values.experiences : [],
     guestMessage: values.guestMessage.trim(),
     website: values.website,
   };
@@ -86,9 +82,6 @@ function responseLines(payload: RSVPPayload): [string, string][] {
         ["People in your room", String(payload.roomOccupants)],
       );
     }
-  }
-  if (payload.attendanceStatus === "accepted") {
-    lines.push(["Rwanda experiences", experienceTitles(payload.experiences).join(", ") || "None selected"]);
   }
   return lines;
 }
@@ -145,12 +138,11 @@ export default function RSVPForm({ whatsappNumber, deadline }: Props) {
   const whatsappDigits = whatsappNumber?.replace(/[^\d]/g, "") ?? "";
   const whatsappReady = /^\d{7,15}$/.test(whatsappDigits);
 
-  function change(name: keyof FormValues, value: string | RwandaExperienceId[]) {
+  function change(name: keyof FormValues, value: string) {
     setValues((previous) => ({ ...previous, [name]: value }));
     setErrors((previous) => {
       const next = { ...previous };
       delete next[name];
-      if (name === "attendanceStatus" && value !== "accepted") delete next.experiences;
       if (name === "attendanceStatus" && value !== "accepted") delete next.accommodationStatus;
       if ((name === "attendanceStatus" && value !== "accepted") || (name === "accommodationStatus" && value !== "yes")) {
         for (const field of ["budgetCurrency", "budgetAmount", "nights", "breakfastPreference", "accommodationType", "sharingPreference", "roomOccupants"]) delete next[field];
@@ -279,9 +271,8 @@ export default function RSVPForm({ whatsappNumber, deadline }: Props) {
               <div className="rsvp-field"><label htmlFor="rsvp-roomOccupants">How many people would stay in your room, including you? <span className="rsvp-required">*</span></label><input id="rsvp-roomOccupants" name="roomOccupants" className="rsvp-short-input" type="number" inputMode="numeric" min="1" step="1" value={values.roomOccupants} onChange={(event) => change("roomOccupants", event.target.value)} required aria-invalid={!!errors.roomOccupants} aria-describedby={errors.roomOccupants ? "rsvp-roomOccupants-error" : undefined} /><ErrorText name="roomOccupants" errors={errors} /></div>
             </div>}
           </div>}
-          {attending && <ExperienceChoices selected={values.experiences} onChange={selected => change("experiences", selected)} error={errors.experiences} />}
           <div className="rsvp-message rsvp-field"><label htmlFor="rsvp-guestMessage">A message for the couple <span className="rsvp-optional">(optional)</span></label><textarea id="rsvp-guestMessage" name="guestMessage" rows={4} maxLength={1200} value={values.guestMessage} onChange={(event) => change("guestMessage", event.target.value)} aria-invalid={!!errors.guestMessage} aria-describedby={errors.guestMessage ? "rsvp-guestMessage-error" : undefined} /><ErrorText name="guestMessage" errors={errors} /></div>
-          <p className="rsvp-privacy">Your contact details, stay preferences and experience interests are shared privately with the wedding hosts to help plan the celebration. Your selections do not reserve a room or book a trip.</p>
+          <p className="rsvp-privacy">Your contact details and stay preferences are shared privately with the wedding hosts to help plan the celebration. Accommodation preferences do not reserve a room.</p>
           <div className="rsvp-actions">
             <button type="submit" className="button rsvp-send" disabled={busy || sent}>{sent ? "RSVP sent" : status === "submitting" ? "Sending your reply…" : status === "validating" ? "Checking your reply…" : status === "error" ? "Try Again" : "Send My RSVP"}<span aria-hidden="true">♡</span></button>
           </div>

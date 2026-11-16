@@ -1,31 +1,36 @@
-/** Activity ideas checked against Visit Rwanda's destination guide.
- * https://visitrwanda.com/three-day-experiences/
- * Selections express interest; the hosts arrange details separately. */
+/** Curated travel information, independent of the wedding RSVP.
+ * Official destination links checked 16 November 2026. */
 export const rwandaExperiences = [
   {
-    id: "lake_kivu", title: "Lake Kivu escape", location: "Lake Kivu", category: "Unwind by the water",
-    description: "Boat rides, island views and a little time to slow down by the lake.",
-    image: "/images/experiences/lake-kivu.webp",
+    id: "gorilla-trekking", category: "Iconic wildlife",
+    title: "Gorilla Trekking in Volcanoes National Park",
+    description: "Journey through Rwanda’s mountain forests for an unforgettable encounter with mountain gorillas in their natural habitat.",
+    location: "Musanze, Northern Rwanda", duration: "Full day or overnight trip",
+    image: "/images/experiences/gorillas.webp", imageAlt: "Mountain gorillas among the green forests of Volcanoes National Park.",
+    href: "https://visitrwandabookings.rdb.rw/rdbportal/mountain-gorilla-tracking",
   },
   {
-    id: "akagera_safari", title: "Akagera safari", location: "Akagera National Park", category: "A little adventure",
-    description: "Discover Rwanda’s savannah and look out for wildlife on a game drive.",
-    image: "/images/experiences/akagera.webp",
+    id: "akagera-safari", category: "Safari experience",
+    title: "Discover the Big Five in Akagera National Park",
+    description: "Explore the savannah on safari, with the chance to spot lions, leopards, elephants, buffaloes and rhinos.",
+    location: "Eastern Rwanda", duration: "Full day or overnight safari",
+    image: "/images/experiences/akagera.webp", imageAlt: "A safari boat crossing a lake in Akagera National Park, surrounded by green hills.",
+    href: "https://visitrwanda.com/destinations/akagera-national-park-2/",
   },
   {
-    id: "nyungwe_canopy", title: "Nyungwe canopy walk", location: "Nyungwe National Park", category: "Above the treetops",
-    description: "Step into the rainforest and take in the views from the canopy walkway.",
-    image: "/images/experiences/nyungwe.webp",
+    id: "kigali-memorial", category: "History & remembrance",
+    title: "Visit the Kigali Genocide Memorial",
+    description: "Honour the victims of the 1994 Genocide against the Tutsi and reflect on Rwanda’s history, resilience and reconciliation.",
+    location: "Gisozi, Kigali", duration: "Suggested visit: 1.5–2 hours",
+    image: "/images/experiences/kigali-memorial.webp", imageAlt: "Sculptures, water and greenery in the memorial gardens at the Kigali Genocide Memorial.",
+    href: "https://kgm.rw/visit/",
   },
   {
-    id: "gorilla_trekking", title: "Gorilla trekking", location: "Volcanoes National Park", category: "An extraordinary encounter",
-    description: "Explore the forest with a guide for a mountain gorilla encounter.",
-    image: "/images/experiences/gorillas.webp",
+    id: "outdoor-adventure", category: "Outdoor adventure",
+    title: "Adventure & Outdoor Experiences",
+    description: "Try quad biking, ziplining, horse riding or archery, and discover an adventurous side of your stay in Rwanda.",
+    location: "Kigali and surrounding areas", duration: "Availability and locations vary by activity",
+    image: "/images/experiences/kigali-adventure.webp", imageAlt: "A zipline adventure in the hills around Kigali.",
+    href: "https://visitrwanda.com/tourism/interests/sports-adventure/",
   },
 ] as const;
-
-export type RwandaExperienceId = typeof rwandaExperiences[number]["id"];
-export const experienceIds = rwandaExperiences.map(experience => experience.id);
-export function experienceTitles(ids: readonly RwandaExperienceId[]): string[] {
-  return rwandaExperiences.filter(experience => ids.includes(experience.id)).map(experience => experience.title);
-}

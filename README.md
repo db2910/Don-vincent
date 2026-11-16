@@ -38,7 +38,7 @@ Provider acceptance does not prove inbox delivery. FormSubmit documents a 30-day
 
 ## Photos and music
 
-Five newly supplied photographs are now used from `public/images/moments/`, alongside the original `public/images/couple.jpeg`. Original filenames and source files are preserved. `photography.hero` and `photography.mobileHero` both use the approved `couple.jpeg`; `photography.couple` and `photography.story` select the introduction collage. The four-entry `photos` array drives the editorial gallery and accessible lightbox. Images keep their natural aspect ratio except deliberate hero background cropping. See [the complete visual asset inventory](docs/ASSET_INVENTORY.md).
+The two enhanced photographs supplied on 16 November are used in the couple feature and the five-photo gallery. Original filenames and older source files are preserved. `photography.hero` and `photography.mobileHero` retain the approved `couple.jpeg`, since neither enhanced upload matches that image. Images keep their natural aspect ratio except deliberate hero background cropping. See [the complete visual asset inventory](docs/ASSET_INVENTORY.md).
 
 All nine original added photos remain unchanged in `client-assets/pending-review/`, outside the public web root and ignored by Git. Five suitable photographs were copied with identical content and original filenames into the invitation; unrelated or sensitive compositions are not included. Add future approved photographs to configuration without duplicating gallery entries.
 
@@ -108,4 +108,4 @@ The hero uses `couple.jpeg` on phones and large screens. Desktop framing is boun
 
 RSVP is one continuous form. Attendance reveals the applicable accommodation question; Yes reveals stay preferences. Values survive toggling, inactive details are cleared from the payload, and responses appear inline. Success means FormSubmit accepted the submission. The form has no preview/test branch and unavailable WhatsApp controls are hidden.
 
-Guests attending the wedding can choose any number of four Rwanda experiences before writing their message. These interests appear in the submitted review, prepared WhatsApp message, and both FormSubmit delivery paths. The form offers only definite accommodation choices. See [the invitation update](docs/INVITATION_EXPERIENCES_UPDATE.md) for sources and verification.
+Travel & Accommodation is followed immediately by a standalone Discover Rwanda section, featuring gorilla trekking, Akagera safari, the Kigali Genocide Memorial and outdoor adventures. Photo cards link to official destination information; travel activities are separate from the RSVP, email and WhatsApp reply. The form offers only definite accommodation choices. See [the invitation update](docs/INVITATION_EXPERIENCES_UPDATE.md) for sources and verification.

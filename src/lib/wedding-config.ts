@@ -15,7 +15,8 @@ export type WeddingConfig = {
 
 const moment = (filename: string, alt: string, width: number, height: number, caption?: string): WeddingPhoto => ({ src: `/images/moments/${filename}`, alt, width, height, caption });
 const photographs = {
-  sharedSmile: moment("WhatsApp Image 2026-11-06 at 12.04.16.jpeg", "Shee Salamata and Don Vincent sharing a smile among guests indoors.", 1280, 847, "A shared smile"),
+  sharedSmile: { src: "/images/WhatsApp Image 2026-11-16 at 10.42.17.jpeg", alt: "Shee Salamata and Don Vincent smiling together indoors in white and gold outfits.", width: 1541, height: 1020, caption: "A shared smile" },
+  embrace: { src: "/images/WhatsApp Image 2026-11-16 at 10.42.17 (1).jpeg", alt: "Shee Salamata and Don Vincent embracing and smiling together.", width: 1086, height: 1448, caption: "Together, always" },
   selfie: moment("WhatsApp Image 2026-11-06 at 12.04.18.jpeg", "A close smiling selfie of Shee Salamata and Don Vincent.", 959, 1280, "Close to you"),
   balloons: moment("WhatsApp Image 2026-11-06 at 12.04.21.jpeg", "Shee Salamata and Don Vincent together beneath gold, ivory and turquoise balloons.", 960, 1280, "Moments together"),
 };
@@ -31,8 +32,8 @@ export const weddingConfig: WeddingConfig = {
     embedUrl: "https://maps.google.com/maps?q=Kigali%20Serena%20Hotel&output=embed",
   },
   story: null,
-  photography: { hero: { src: "/images/couple.jpeg", alt: "Shee Salamata and Don Vincent smiling together", width: 1600, height: 1066 }, mobileHero: { src: "/images/couple.jpeg", alt: "Shee Salamata and Don Vincent smiling together", width: 1600, height: 1066 }, couple: photographs.balloons, story: photographs.selfie },
-  photos: [photographs.sharedSmile, photographs.selfie, photographs.balloons, { src: "/images/couple.jpeg", alt: "Shee Salamata and Don Vincent together", width: 1600, height: 1066, caption: "With you, always" }],
+  photography: { hero: { src: "/images/couple.jpeg", alt: "Shee Salamata and Don Vincent smiling together", width: 1600, height: 1066 }, mobileHero: { src: "/images/couple.jpeg", alt: "Shee Salamata and Don Vincent smiling together", width: 1600, height: 1066 }, couple: photographs.sharedSmile, story: photographs.embrace },
+  photos: [photographs.sharedSmile, photographs.embrace, photographs.selfie, photographs.balloons, { src: "/images/couple.jpeg", alt: "Shee Salamata and Don Vincent together", width: 1600, height: 1066, caption: "With you, always" }],
   countdown: { useDateBeginningWhenTimeUnknown: true },
   programme: [
     { title: "Wedding Ceremony", time: "15:00", location: "Kigali City Hall", description: "Join us at Kigali City Hall as we become husband and wife, surrounded by the people we love." },

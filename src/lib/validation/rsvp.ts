@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { experienceIds } from "@/lib/experiences";
 
 const contact = z.string().trim().min(5, "Please enter an email address or phone number.").max(160)
   .refine((value) => {
@@ -43,14 +42,10 @@ export const accommodationSchema = z.object(accommodationShape).superRefine(vali
 
 export const rsvpSchema = guestSchema.extend({
   ...accommodationShape,
-  experiences: z.array(z.enum(experienceIds)).max(experienceIds.length).refine(ids => new Set(ids).size === ids.length, "Please select each experience only once.").default([]),
   guestMessage: z.string().trim().max(1200).default(""),
   website: z.string().max(200).default(""),
 }).strict().superRefine((value, ctx) => {
   validateAccommodation(value, ctx);
-  if (value.attendanceStatus === "declined" && value.experiences.length > 0) {
-    ctx.addIssue({ code: "custom", path: ["experiences"], message: "Experiences are available for guests attending the wedding." });
-  }
   if (value.attendanceStatus === "declined" && value.accommodationStatus !== "not_applicable") {
     ctx.addIssue({ code: "custom", path: ["accommodationStatus"], message: "Accommodation does not apply when declining." });
   }

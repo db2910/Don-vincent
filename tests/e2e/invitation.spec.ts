@@ -159,30 +159,36 @@ test('wedding itinerary matches the confirmed programme and refresh at RSVP reop
   await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBe(0);
 });
 
-test('experience cards allow multiple interests, keyboard selection and an accurate submitted reply', async ({ page }) => {
+test('Discover Rwanda follows travel, links to official guides and stays separate from RSVP', async ({ page }) => {
   let submitted: Record<string, unknown> | undefined;
   await page.route('**/api/rsvp', async route => {
     submitted = route.request().postDataJSON();
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(preparedReply(route))});
   });
-  await enter(page); await guest(page);
-  await page.getByRole('radio', { name: 'Joyfully accepts' }).check();
-  await page.getByRole('radio', { name: 'No, I have my own arrangements' }).check();
-  const cards = page.locator('.rsvp-experience-card');
-  await expect(cards).toHaveCount(4);
-  await cards.first().click();
-  const forest = page.getByRole('checkbox', { name: 'Nyungwe canopy walk' });
-  await forest.focus(); await page.keyboard.press('Space');
-  await expect(forest).toBeChecked();
-  await expect(page.getByRole('checkbox', { name: 'Lake Kivu escape' })).toBeChecked();
-  await expect(page.getByRole('checkbox', { name: 'Akagera safari' })).not.toBeChecked();
-  expect(await page.locator('#rsvp-experiences').evaluate(el => !!(el.compareDocumentPosition(document.getElementById('rsvp-guestMessage')!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
-  expect(decodeURIComponent((await page.getByRole('link', { name: /RSVP via WhatsApp/ }).getAttribute('href'))!)).toContain('Lake Kivu escape, Nyungwe canopy walk');
-  await page.getByRole('button', { name: 'Send My RSVP' }).click();
+  await enter(page);
+  const discover = page.locator('#discover-rwanda');
+  await discover.scrollIntoViewIfNeeded();
+  await expect(discover.getByRole('heading', {name:'Discover Rwanda', exact:true})).toBeVisible();
+  await expect(discover.locator('article')).toHaveCount(4);
+  await expect(discover.locator('article h3')).toHaveText([
+    'Gorilla Trekking in Volcanoes National Park', 'Discover the Big Five in Akagera National Park',
+    'Visit the Kigali Genocide Memorial', 'Adventure & Outdoor Experiences',
+  ]);
+  expect(await discover.evaluate(el => el.previousElementSibling?.id)).toBe('travel');
+  expect(await discover.evaluate(el => el.closest('form'))).toBeNull();
+  await expect(discover.getByRole('link', {name:/Explore Experience:/})).toHaveCount(4);
+  await expect(discover.getByRole('link', {name:/Explore Experience: Gorilla/})).toHaveAttribute('href','https://visitrwandabookings.rdb.rw/rdbportal/mountain-gorilla-tracking');
+  await expect(discover.getByRole('link', {name:/Explore Experience: Visit the Kigali/})).toHaveAttribute('href','https://kgm.rw/visit/');
+  await expect(discover.getByRole('link', {name:/Explore Rwanda with Visit Rwanda/})).toHaveAttribute('href','https://visitrwanda.com/');
+  await expect(discover.getByRole('checkbox')).toHaveCount(0);
+  await page.getByRole('link', {name:'Share your stay preferences'}).click();
+  await guest(page);
+  await page.getByRole('radio', {name:'Joyfully accepts'}).check();
+  await page.getByRole('radio', {name:'No, I have my own arrangements'}).check();
+  await expect(page.locator('#rsvp').getByRole('checkbox')).toHaveCount(0);
+  await page.getByRole('button', {name:'Send My RSVP'}).click();
   await expect(page.locator('#rsvp').getByRole('status')).toContainText('Your reply has been submitted');
-  expect(submitted?.experiences).toEqual(['lake_kivu', 'nyungwe_canopy']);
-  await page.getByText('View your submitted reply').click();
-  await expect(page.locator('.rsvp-review')).toContainText('Lake Kivu escape, Nyungwe canopy walk');
+  expect(submitted).not.toHaveProperty('experiences');
 });
 
 for(const choice of ['yes','no','declined']) {
@@ -298,12 +304,13 @@ for(const viewport of viewports) {
     await page.waitForTimeout(950);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:`test-results/invitation-${viewport.width}.png`,fullPage:true});await page.screenshot({path:`test-results/hero-${viewport.width}.png`});
     if(viewport.width<=800) { await page.getByRole('button',{name:'Open navigation'}).click();await page.getByRole('link',{name:'The venue',exact:true}).click();await expect(page.locator('#venue')).toBeInViewport();await expect(page.getByRole('button',{name:'Open navigation'})).toHaveAttribute('aria-expanded','false'); }
     await page.getByRole('radio',{name:'Joyfully accepts'}).check();await page.getByRole('radio',{name:'Yes',exact:true}).check();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-    await expect(page.getByRole('checkbox', {name:'Lake Kivu escape'})).toBeVisible();
-    await page.getByRole('checkbox', {name:'Lake Kivu escape'}).check();
-    await page.getByRole('checkbox', {name:'Nyungwe canopy walk'}).check();
-    await page.locator('#rsvp-experiences').scrollIntoViewIfNeeded();
-    await expect.poll(() => page.locator('.rsvp-experience-photo img').evaluateAll(images => images.every(image => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
-    await page.screenshot({path:`test-results/experiences-${viewport.width}.png`});
+    const discover = page.locator('#discover-rwanda');
+    await discover.scrollIntoViewIfNeeded();
+    await expect(discover.locator('article')).toHaveCount(4);
+    await expect.poll(() => discover.locator('img').evaluateAll(images => images.every(image => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
+    const cards = await discover.locator('article').evaluateAll(elements => elements.map(el => { const rect = el.getBoundingClientRect(); return {x:rect.x,y:rect.y}; }));
+    expect(Math.abs(cards[0].y - cards[1].y) < 2).toBe(viewport.width > 700);
+    await discover.screenshot({path:`test-results/discover-rwanda-${viewport.width}.png`,style:'nextjs-portal{display:none!important}'});
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     expect(await page.locator('label[for="rsvp-fullName"]').evaluate(el=>parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(16);
     if(viewport.width<701) expect(await page.locator('#home picture img').evaluate((el:HTMLImageElement)=>el.currentSrc)).toContain('couple.jpeg');

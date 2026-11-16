@@ -43,30 +43,18 @@ function stubResponse(body: object) {
 }
 
 describe("RSVP guest journey", { timeout: 15_000 }, () => {
-  it("selects multiple experiences before the message and preserves interests across attendance changes", async () => {
+  it("keeps travel experiences outside the RSVP and submitted reply", async () => {
     const user = userEvent.setup();
     const fetchMock = stubResponse({ submitted: true });
     render(<RSVPForm whatsappNumber="250788408241" />);
     await guest(user);
     await user.click(screen.getByLabelText("No, I have my own arrangements"));
-    const lake = screen.getByRole("checkbox", { name: "Lake Kivu escape" });
-    const forest = screen.getByRole("checkbox", { name: "Nyungwe canopy walk" });
-    await user.click(lake);
-    await user.click(forest);
-    expect(lake).toBeChecked(); expect(forest).toBeChecked();
-    expect(lake.compareDocumentPosition(screen.getByLabelText(/A message for the couple/)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(decodeURIComponent(screen.getByRole("link", { name: /RSVP via WhatsApp/ }).getAttribute("href")!)).toContain("Rwanda experiences: Lake Kivu escape, Nyungwe canopy walk");
-    await user.click(screen.getByLabelText("Regretfully declines"));
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
-    expect(decodeURIComponent(screen.getByRole("link", { name: /RSVP via WhatsApp/ }).getAttribute("href")!)).not.toContain("Lake Kivu");
-    await user.click(screen.getByLabelText("Joyfully accepts"));
-    expect(screen.getByRole("checkbox", { name: "Lake Kivu escape" })).toBeChecked();
-    await user.click(screen.getByRole("checkbox", { name: "Lake Kivu escape" }));
+    expect(screen.queryByText("Discover Rwanda")).not.toBeInTheDocument();
+    expect(decodeURIComponent(screen.getByRole("link", { name: /RSVP via WhatsApp/ }).getAttribute("href")!)).not.toContain("Rwanda experiences");
     await user.click(screen.getByRole("button", { name: /Send My RSVP/ }));
     await screen.findByText("Your reply has been submitted");
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body).experiences).toEqual(["nyungwe_canopy"]);
-    await user.click(screen.getByText("View your submitted reply"));
-    expect(screen.getByText("Rwanda experiences")).toBeVisible();
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).not.toHaveProperty("experiences");
   });
   it("offers only the confirmed accommodation choices", async () => {
     const user = userEvent.setup();
