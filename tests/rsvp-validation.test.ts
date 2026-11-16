@@ -50,10 +50,12 @@ describe("shared RSVP validation", () => {
       { accommodationType: "either" }, { sharingPreference: "own_group" },
     ]) expect(rsvpSchema.safeParse({ ...guest, ...details, ...change }).success).toBe(false);
   });
-  it("keeps travel interests outside the RSVP schema", () => {
+  it("accepts optional multiple experiences and rejects unknown or repeated choices", () => {
     const payload = { ...guest, accommodationStatus: "no" };
-    expect(rsvpSchema.parse(payload)).not.toHaveProperty("experiences");
-    expect(rsvpSchema.safeParse({ ...payload, experiences: ["gorilla-trekking"] }).success).toBe(false);
+    expect(rsvpSchema.parse(payload).experiences).toEqual([]);
+    expect(rsvpSchema.parse({ ...payload, experiences: ["gorilla-trekking", "kigali-memorial"] }).experiences).toHaveLength(2);
+    expect(rsvpSchema.safeParse({ ...payload, experiences: ["unknown"] }).success).toBe(false);
+    expect(rsvpSchema.safeParse({ ...payload, experiences: ["gorilla-trekking", "gorilla-trekking"] }).success).toBe(false);
   });
   it("accepts only the FormSubmit recipient endpoint with browser verification enabled", () => {
     const handoff = { action: "https://formsubmit.co/host%40example.test", fields: { _template: "table", Reference: "key", Guest: "Guest" } };

@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import type { RSVPPayload } from "@/lib/validation/rsvp";
+import { experienceTitles } from "@/lib/experiences";
 import { weddingConfig } from "@/lib/wedding-config";
 import type { FormSubmitPreparation, FormSubmitVerification } from "@/lib/validation/formsubmit";
 const labels: Record<string, string> = {
@@ -29,6 +30,7 @@ export function buildFormSubmitFields(payload: RSVPPayload, reference: string, f
     "Guest": payload.fullName,
     "Phone or email": payload.contact,
     "Attendance": labels[payload.attendanceStatus],
+    "Rwanda experiences": experienceTitles(payload.experiences).join(", ") || "None selected",
   };
   // FormSubmit recognizes the email field for Reply-To; a phone is never used as email.
   if (z.email().safeParse(payload.contact).success) fields.email = payload.contact;

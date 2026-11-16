@@ -21,6 +21,17 @@ beforeEach(() => {
 });
 afterEach(() => { expect(fetchMock).not.toHaveBeenCalled(); vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 describe("RSVP validation and preparation API", () => {
+  it("places all selected experiences in the same FormSubmit table as the guest details", async () => {
+    const response = await POST(request({ ...payload, experiences: ["gorilla-trekking", "kigali-memorial"] }));
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(formSubmitPreparationSchema.safeParse(data).success).toBe(true);
+    for (const handoff of [data.delivery, data.verification]) {
+      expect(handoff.fields._template).toBe("table");
+      expect(handoff.fields.Guest).toBe(payload.fullName);
+      expect(handoff.fields["Rwanda experiences"]).toBe("Gorilla Trekking in Volcanoes National Park, Visit the Kigali Genocide Memorial");
+    }
+  });
   it("fails safely for an invalid destination", async () => {
     configMock.mockReturnValue(null);
     const response = await POST(request()); expect(response.status).toBe(503);

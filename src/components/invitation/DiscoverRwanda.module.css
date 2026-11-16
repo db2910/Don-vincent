@@ -5,6 +5,12 @@
 .intro .tagline { font-size:25px; font-style:italic; line-height:1.6; color:#745a35; margin-bottom:25px; }
 .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:36px; max-width:1160px; margin:auto; }
 .card { display:flex; flex-direction:column; min-width:0; border:1px solid #cab899; background:var(--pearl); box-shadow:0 12px 38px #57473708; }
+.selected { border-color:#876735; box-shadow:0 0 0 1px #876735; }
+.intro .selectionHint { padding:16px 22px; border:1px solid var(--line); background:#f1e7d6; color:#594329; }
+.select { display:flex; align-items:center; gap:12px; min-height:52px; margin-top:16px; padding-top:16px; border-top:1px solid var(--line); font-size:18px; line-height:1.5; color:#594329; cursor:pointer; }
+.select input { appearance:auto; accent-color:#876735; width:20px; height:20px; flex-shrink:0; margin:0; }
+.select:has(input:focus-visible) { outline:2px solid #8b6b37; outline-offset:4px; }
+.select:has(input:disabled) { cursor:default; }
 .photo { position:relative; aspect-ratio:3/2; overflow:hidden; background:var(--champagne); }
 .photo img { width:100%; height:100%; object-fit:cover; }
 .number { position:absolute; left:20px; bottom:18px; display:grid; place-items:center; width:45px; height:45px; background:#fffdf8eb; color:#594329; font-family:var(--font-serif); font-size:16px; border:1px solid #c4a46a80; }

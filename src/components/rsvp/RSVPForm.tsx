@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { rsvpSchema, type RSVPPayload } from "@/lib/validation/rsvp";
 import { isRsvpFailureCode, rsvpFailureMessages } from "@/lib/rsvp-errors";
 import { formSubmitPreparationSchema, type FormSubmitVerification } from "@/lib/validation/formsubmit";
 import { deliverFormSubmit } from "@/lib/notifications/formsubmit-browser";
+import { experienceTitles, type RwandaExperienceId } from "@/lib/experiences";
 import "./rsvp.css";
 
 type FormValues = {
@@ -24,7 +25,7 @@ type FormValues = {
 };
 type Errors = Record<string, string>;
 type SubmitState = "idle" | "validating" | "submitting" | "success" | "error";
-type Props = { whatsappNumber: string | null; deadline?: string | null };
+type Props = { whatsappNumber: string | null; deadline?: string | null; experiences?: RwandaExperienceId[]; onSelectionLockChange?: (locked: boolean) => void };
 
 const initialValues: FormValues = {
   fullName: "", contact: "", attendanceStatus: "", accommodationStatus: "",
@@ -43,7 +44,7 @@ const choices = {
 const humanLabels: Record<string, string> = Object.fromEntries(Object.values(choices).flatMap((group) => group.map(([value, label]) => [value, label])));
 
 /** Clear inapplicable values in the request, while preserving them in the local form. */
-function payloadFrom(values: FormValues) {
+function payloadFrom(values: FormValues, experiences: RwandaExperienceId[]) {
   const attending = values.attendanceStatus === "accepted";
   const needsStay = attending && values.accommodationStatus === "yes";
   const numeric = (value: string) => value.trim() === "" ? null : Number(value);
@@ -59,6 +60,7 @@ function payloadFrom(values: FormValues) {
     accommodationType: needsStay ? values.accommodationType || null : null,
     sharingPreference: needsStay ? values.sharingPreference || null : null,
     roomOccupants: needsStay ? numeric(values.roomOccupants) : null,
+    experiences,
     guestMessage: values.guestMessage.trim(),
     website: values.website,
   };
@@ -83,6 +85,7 @@ function responseLines(payload: RSVPPayload): [string, string][] {
       );
     }
   }
+  lines.push(["Rwanda experiences", experienceTitles(payload.experiences).join(", ") || "None selected"]);
   return lines;
 }
 
@@ -117,7 +120,7 @@ function Review({ payload }: { payload: RSVPPayload }) {
   </dl>;
 }
 
-export default function RSVPForm({ whatsappNumber, deadline }: Props) {
+export default function RSVPForm({ whatsappNumber, deadline, experiences = [], onSelectionLockChange }: Props) {
   const [values, setValues] = useState<FormValues>(initialValues);
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<SubmitState>("idle");
@@ -133,10 +136,12 @@ export default function RSVPForm({ whatsappNumber, deadline }: Props) {
   const attending = values.attendanceStatus === "accepted";
   const sent = status === "success";
   const busy = status === "submitting" || status === "validating";
-  const parsedPayload = rsvpSchema.safeParse(payloadFrom(values));
+  const parsedPayload = rsvpSchema.safeParse(payloadFrom(values, experiences));
   const validPayload = parsedPayload.success ? parsedPayload.data : null;
   const whatsappDigits = whatsappNumber?.replace(/[^\d]/g, "") ?? "";
   const whatsappReady = /^\d{7,15}$/.test(whatsappDigits);
+
+  useEffect(() => { onSelectionLockChange?.(busy || sent); }, [busy, sent, onSelectionLockChange]);
 
   function change(name: keyof FormValues, value: string) {
     setValues((previous) => ({ ...previous, [name]: value }));
@@ -173,7 +178,7 @@ export default function RSVPForm({ whatsappNumber, deadline }: Props) {
     event.preventDefault();
     if (inFlight.current || sent) return;
     setStatus("validating");
-    const result = rsvpSchema.safeParse(payloadFrom(values));
+    const result = rsvpSchema.safeParse(payloadFrom(values, experiences));
     if (!result.success) {
       setStatus("idle");
       showErrors(result.error.issues);
@@ -243,7 +248,7 @@ export default function RSVPForm({ whatsappNumber, deadline }: Props) {
     <div className="rsvp-paper">
       <p className="rsvp-form-introduction">A personal reply, with love. Fields marked <span className="rsvp-required">*</span> are required.</p>
       <noscript><p className="rsvp-note">Please enable JavaScript to reply online. You can still view all the wedding details above.</p></noscript>
-      <form method="post" action="/api/rsvp" noValidate onSubmit={handleSubmit} aria-busy={busy} aria-label="Wedding RSVP">
+      <form id="wedding-rsvp-form" method="post" action="/api/rsvp" noValidate onSubmit={handleSubmit} aria-busy={busy} aria-label="Wedding RSVP">
         {(Object.keys(errors).length > 0 || submitError) && <div className="rsvp-error-summary" ref={errorRef} tabIndex={-1} role="alert">
           {submitError || "Please check the highlighted details below."}
           {supportCode && <p className="rsvp-support-code">Support code: {supportCode}</p>}
@@ -272,7 +277,7 @@ export default function RSVPForm({ whatsappNumber, deadline }: Props) {
             </div>}
           </div>}
           <div className="rsvp-message rsvp-field"><label htmlFor="rsvp-guestMessage">A message for the couple <span className="rsvp-optional">(optional)</span></label><textarea id="rsvp-guestMessage" name="guestMessage" rows={4} maxLength={1200} value={values.guestMessage} onChange={(event) => change("guestMessage", event.target.value)} aria-invalid={!!errors.guestMessage} aria-describedby={errors.guestMessage ? "rsvp-guestMessage-error" : undefined} /><ErrorText name="guestMessage" errors={errors} /></div>
-          <p className="rsvp-privacy">Your contact details and stay preferences are shared privately with the wedding hosts to help plan the celebration. Accommodation preferences do not reserve a room.</p>
+          <p className="rsvp-privacy">Your contact details, stay preferences and selected Rwanda experiences are shared privately with the wedding hosts to help plan the celebration. Your selections do not reserve a room or book a trip.</p>
           <div className="rsvp-actions">
             <button type="submit" className="button rsvp-send" disabled={busy || sent}>{sent ? "RSVP sent" : status === "submitting" ? "Sending your reply…" : status === "validating" ? "Checking your reply…" : status === "error" ? "Try Again" : "Send My RSVP"}<span aria-hidden="true">♡</span></button>
           </div>

@@ -159,7 +159,7 @@ test('wedding itinerary matches the confirmed programme and refresh at RSVP reop
   await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBe(0);
 });
 
-test('Discover Rwanda follows travel, links to official guides and stays separate from RSVP', async ({ page }) => {
+test('Discover Rwanda shares multiple checkbox selections with the wedding RSVP', async ({ page }) => {
   let submitted: Record<string, unknown> | undefined;
   await page.route('**/api/rsvp', async route => {
     submitted = route.request().postDataJSON();
@@ -180,7 +180,12 @@ test('Discover Rwanda follows travel, links to official guides and stays separat
   await expect(discover.getByRole('link', {name:/Explore Experience: Gorilla/})).toHaveAttribute('href','https://visitrwandabookings.rdb.rw/rdbportal/mountain-gorilla-tracking');
   await expect(discover.getByRole('link', {name:/Explore Experience: Visit the Kigali/})).toHaveAttribute('href','https://kgm.rw/visit/');
   await expect(discover.getByRole('link', {name:/Explore Rwanda with Visit Rwanda/})).toHaveAttribute('href','https://visitrwanda.com/');
-  await expect(discover.getByRole('checkbox')).toHaveCount(0);
+  await expect(discover.getByRole('checkbox')).toHaveCount(4);
+  const gorillas = discover.getByRole('checkbox', {name:'Gorilla Trekking in Volcanoes National Park'});
+  const memorial = discover.getByRole('checkbox', {name:'Visit the Kigali Genocide Memorial'});
+  await gorillas.check(); await memorial.focus(); await page.keyboard.press('Space');
+  await expect(gorillas).toBeChecked(); await expect(memorial).toBeChecked();
+  await gorillas.uncheck(); await expect(gorillas).not.toBeChecked(); await gorillas.check();
   await page.getByRole('link', {name:'Share your stay preferences'}).click();
   await guest(page);
   await page.getByRole('radio', {name:'Joyfully accepts'}).check();
@@ -188,7 +193,10 @@ test('Discover Rwanda follows travel, links to official guides and stays separat
   await expect(page.locator('#rsvp').getByRole('checkbox')).toHaveCount(0);
   await page.getByRole('button', {name:'Send My RSVP'}).click();
   await expect(page.locator('#rsvp').getByRole('status')).toContainText('Your reply has been submitted');
-  expect(submitted).not.toHaveProperty('experiences');
+  expect(submitted?.experiences).toEqual(['kigali-memorial', 'gorilla-trekking']);
+  await expect(gorillas).toBeDisabled(); await expect(memorial).toBeDisabled();
+  await page.getByText('View your submitted reply').click();
+  await expect(page.locator('.rsvp-review')).toContainText('Gorilla Trekking in Volcanoes National Park, Visit the Kigali Genocide Memorial');
 });
 
 for(const choice of ['yes','no','declined']) {

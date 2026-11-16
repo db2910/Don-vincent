@@ -10,11 +10,11 @@ const reference = "f9918d32-7358-4cd8-97df-9154e3c79868";
 beforeEach(() => vi.stubEnv("FORMSUBMIT_RECIPIENT", "client@example.test"));
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 describe("FormSubmit preparation", () => {
-  it("keeps trip planning separate from both wedding email delivery paths", () => {
-    const prepared = prepareFormSubmit(payload, reference, "client@example.test", formUrl);
+  it("includes selected experiences in both wedding email tables", () => {
+    const prepared = prepareFormSubmit({ ...payload, experiences: ["gorilla-trekking", "kigali-memorial"] }, reference, "client@example.test", formUrl);
     expect(formSubmitPreparationSchema.safeParse(prepared).success).toBe(true);
     for (const handoff of [prepared.delivery, prepared.verification]) {
-      expect(handoff.fields).not.toHaveProperty("Rwanda experiences");
+      expect(handoff.fields["Rwanda experiences"]).toBe("Gorilla Trekking in Volcanoes National Park, Visit the Kigali Genocide Memorial");
       expect(handoff.fields.Celebration).not.toMatch(/civil/i);
     }
   });

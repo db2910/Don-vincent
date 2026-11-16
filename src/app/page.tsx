@@ -11,13 +11,12 @@ import CelebrationDetails from "@/components/invitation/CelebrationDetails";
 import VenueDetails from "@/components/invitation/VenueDetails";
 import SaveTheDate from "@/components/invitation/SaveTheDate";
 import PhotoGallery from "@/components/invitation/PhotoGallery";
-import RSVPForm from "@/components/rsvp/RSVPForm";
+import GuestResponse from "@/components/rsvp/GuestResponse";
 import ClosingMessage from "@/components/invitation/ClosingMessage";
 import TravelAccommodation from "@/components/invitation/TravelAccommodation";
-import DiscoverRwanda from "@/components/invitation/DiscoverRwanda";
 import { weddingConfig } from "@/lib/wedding-config";
 
 export const dynamic = "force-dynamic";
 export default function Home() {
-  return <EnvelopeExperience><InvitationNavigation/><main id="main-content"><WeddingHero/><FormalInvitation/><CoupleStory/><CelebrationDetails/><WeddingItinerary/><VenueDetails/><SaveTheDate/><PhotoGallery/><TravelAccommodation/><DiscoverRwanda/><RSVPForm whatsappNumber={weddingConfig.whatsappNumber} deadline={weddingConfig.rsvpDeadline}/></main><ClosingMessage/><FallingHearts/><MusicToggle/><SectionReveals/></EnvelopeExperience>;
+  return <EnvelopeExperience><InvitationNavigation/><main id="main-content"><WeddingHero/><FormalInvitation/><CoupleStory/><CelebrationDetails/><WeddingItinerary/><VenueDetails/><SaveTheDate/><PhotoGallery/><TravelAccommodation/><GuestResponse whatsappNumber={weddingConfig.whatsappNumber} deadline={weddingConfig.rsvpDeadline}/></main><ClosingMessage/><FallingHearts/><MusicToggle/><SectionReveals/></EnvelopeExperience>;
 }

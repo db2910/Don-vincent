@@ -34,3 +34,9 @@ export const rwandaExperiences = [
     href: "https://visitrwanda.com/tourism/interests/sports-adventure/",
   },
 ] as const;
+
+export type RwandaExperienceId = typeof rwandaExperiences[number]["id"];
+export const experienceIds = rwandaExperiences.map(experience => experience.id);
+export function experienceTitles(ids: readonly RwandaExperienceId[]): string[] {
+  return rwandaExperiences.filter(experience => ids.includes(experience.id)).map(experience => experience.title);
+}

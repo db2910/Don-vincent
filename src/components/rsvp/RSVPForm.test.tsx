@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import RSVPForm from "./RSVPForm";
+import GuestResponse from "./GuestResponse";
 
 type User = ReturnType<typeof userEvent.setup>;
 
@@ -43,18 +44,24 @@ function stubResponse(body: object) {
 }
 
 describe("RSVP guest journey", { timeout: 15_000 }, () => {
-  it("keeps travel experiences outside the RSVP and submitted reply", async () => {
+  it("shares multiple standalone experience selections with the RSVP and locks them after success", async () => {
     const user = userEvent.setup();
     const fetchMock = stubResponse({ submitted: true });
-    render(<RSVPForm whatsappNumber="250788408241" />);
+    render(<GuestResponse whatsappNumber="250788408241" />);
+    const gorillas = screen.getByRole("checkbox", { name: "Gorilla Trekking in Volcanoes National Park" });
+    const memorial = screen.getByRole("checkbox", { name: "Visit the Kigali Genocide Memorial" });
+    await user.click(gorillas); await user.click(memorial);
+    expect(gorillas.closest("form")).toBeNull();
     await guest(user);
     await user.click(screen.getByLabelText("No, I have my own arrangements"));
-    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
-    expect(screen.queryByText("Discover Rwanda")).not.toBeInTheDocument();
-    expect(decodeURIComponent(screen.getByRole("link", { name: /RSVP via WhatsApp/ }).getAttribute("href")!)).not.toContain("Rwanda experiences");
+    const message = decodeURIComponent(screen.getByRole("link", { name: /RSVP via WhatsApp/ }).getAttribute("href")!);
+    expect(message).toContain("Gorilla Trekking in Volcanoes National Park, Visit the Kigali Genocide Memorial");
     await user.click(screen.getByRole("button", { name: /Send My RSVP/ }));
     await screen.findByText("Your reply has been submitted");
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).not.toHaveProperty("experiences");
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).experiences).toEqual(["gorilla-trekking", "kigali-memorial"]);
+    expect(gorillas).toBeDisabled(); expect(memorial).toBeDisabled();
+    await user.click(screen.getByText("View your submitted reply"));
+    expect(screen.getByText("Rwanda experiences")).toBeVisible();
   });
   it("offers only the confirmed accommodation choices", async () => {
     const user = userEvent.setup();
