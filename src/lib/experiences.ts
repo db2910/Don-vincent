@@ -14,7 +14,7 @@ export const rwandaExperiences = [
     title: "Discover the Big Five in Akagera National Park",
     description: "Explore the savannah on safari, with the chance to spot lions, leopards, elephants, buffaloes and rhinos.",
     location: "Eastern Rwanda", duration: "Full day or overnight safari",
-    image: "/images/experiences/akagera.webp", imageAlt: "A safari boat crossing a lake in Akagera National Park, surrounded by green hills.",
+    image: "/images/experiences/akagera-lion.webp", imageAlt: "A lioness perched in a tree in Akagera National Park, Rwanda. Photograph by Matthew Poole.",
     href: "https://visitrwanda.com/destinations/akagera-national-park-2/",
   },
   {
@@ -22,7 +22,7 @@ export const rwandaExperiences = [
     title: "Visit the Kigali Genocide Memorial",
     description: "Honour the victims of the 1994 Genocide against the Tutsi and reflect on Rwanda’s history, resilience and reconciliation.",
     location: "Gisozi, Kigali", duration: "Suggested visit: 1.5–2 hours",
-    image: "/images/experiences/kigali-memorial.webp", imageAlt: "Sculptures, water and greenery in the memorial gardens at the Kigali Genocide Memorial.",
+    image: "/images/experiences/kigali-memorial-building.webp", imageAlt: "The main building and entrance courtyard at the Kigali Genocide Memorial in Gisozi, Kigali.",
     href: "https://kgm.rw/visit/",
   },
   {

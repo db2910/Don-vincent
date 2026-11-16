@@ -36,13 +36,8 @@ export default function DiscoverRwanda({ selected, onSelectionChange, disabled }
         </div>
       </article>)}
     </div>
-    <aside className={styles.planning} aria-labelledby="planning-stay-title" data-reveal>
-      <span className={styles.ornament} aria-hidden="true">✧</span>
-      <h3 id="planning-stay-title">Planning Your Stay?</h3>
-      <p>We encourage our guests to explore these wonderful experiences while visiting Rwanda. Some activities require advance reservations, so we recommend planning ahead to make the most of your trip.</p>
-      <p>For travel inspiration and additional information, visit Rwanda’s official tourism guide.</p>
-      <p>Your selections help us plan and do not book a trip. You can send them with your wedding reply below.</p>
+    <div className={styles.guideLink} data-reveal>
       <a href="https://visitrwanda.com/" target="_blank" rel="noopener noreferrer" className={styles.guide}>Explore Rwanda with Visit Rwanda <ArrowUpRight size={20} aria-hidden="true"/></a>
-    </aside>
+    </div>
   </section>;
 }

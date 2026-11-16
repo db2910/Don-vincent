@@ -174,7 +174,9 @@ test('Discover Rwanda shares multiple checkbox selections with the wedding RSVP'
     'Gorilla Trekking in Volcanoes National Park', 'Discover the Big Five in Akagera National Park',
     'Visit the Kigali Genocide Memorial', 'Adventure & Outdoor Experiences',
   ]);
-  expect(await discover.evaluate(el => el.previousElementSibling?.id)).toBe('travel');
+  expect(await discover.evaluate(el => el.previousElementSibling?.id)).toBe('moments');
+  await expect(page.locator('#travel, a[href="#travel"]')).toHaveCount(0);
+  await expect(page.getByRole('heading', {name:'Planning Your Stay?'})).toHaveCount(0);
   expect(await discover.evaluate(el => el.closest('form'))).toBeNull();
   await expect(discover.getByRole('link', {name:/Explore Experience:/})).toHaveCount(4);
   await expect(discover.getByRole('link', {name:/Explore Experience: Gorilla/})).toHaveAttribute('href','https://visitrwandabookings.rdb.rw/rdbportal/mountain-gorilla-tracking');
@@ -186,7 +188,7 @@ test('Discover Rwanda shares multiple checkbox selections with the wedding RSVP'
   await gorillas.check(); await memorial.focus(); await page.keyboard.press('Space');
   await expect(gorillas).toBeChecked(); await expect(memorial).toBeChecked();
   await gorillas.uncheck(); await expect(gorillas).not.toBeChecked(); await gorillas.check();
-  await page.getByRole('link', {name:'Share your stay preferences'}).click();
+  await page.locator('#rsvp').scrollIntoViewIfNeeded();
   await guest(page);
   await page.getByRole('radio', {name:'Joyfully accepts'}).check();
   await page.getByRole('radio', {name:'No, I have my own arrangements'}).check();
