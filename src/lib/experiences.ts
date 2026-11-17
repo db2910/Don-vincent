@@ -22,7 +22,7 @@ export const rwandaExperiences = [
     title: "Visit the Kigali Genocide Memorial",
     description: "Honour the victims of the 1994 Genocide against the Tutsi and reflect on Rwanda’s history, resilience and reconciliation.",
     location: "Gisozi, Kigali", duration: "Suggested visit: 1.5–2 hours",
-    image: "/images/experiences/kigali-memorial-building.webp", imageAlt: "The main building and entrance courtyard at the Kigali Genocide Memorial in Gisozi, Kigali.",
+    image: "/images/experiences/kwibuka.webp", imageAlt: "The Kwibuka Flame of Remembrance burning above the memorial sculpture.",
     href: "https://kgm.rw/visit/",
   },
   {

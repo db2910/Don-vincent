@@ -1,11 +1,11 @@
 # Discover Rwanda and enhanced photographs
 
-Owner feedback implemented on 16 November 2026:
+Owner feedback updated on 17 November 2026:
 
-- Discover Rwanda follows the photo gallery, then the wedding RSVP. Removed the Travel & Accommodation section and its navigation link at the owner's request.
+- The photo gallery is followed by the wedding RSVP details, optional Discover Rwanda experiences, and one final Send My RSVP button. A Skip experiences and send RSVP link jumps from the end of the wedding details to the final send panel without submitting. The Travel & Accommodation section and its navigation link remain removed.
 - Featured gorilla trekking in Volcanoes National Park, Akagera safari, the Kigali Genocide Memorial, and outdoor adventures in the requested order. Cards use two columns on desktop and one on phones, short descriptions, location/time information, and Explore Experience links.
-- Discover Rwanda stays visually separate from the RSVP and has optional checkboxes on each card. Multiple selections share state with the RSVP through GuestResponse and appear in the same owner email table under “Rwanda experiences”, the submitted reply and the WhatsApp message. Choices lock during submission and after success, and unlock after a failed send.
-- Removed the Planning Your Stay panel and retained the bold, contrasting Visit Rwanda guide link by itself below the cards.
+- Discover Rwanda stays visually separate from the wedding details and has optional checkboxes on each card. Multiple selections share state with the RSVP through GuestResponse and appear in the same owner email table under “Rwanda experiences”, the submitted reply and the WhatsApp message. The checkboxes and final send button use the native `form` attribute to associate with `wedding-rsvp-form`. Choices lock during submission and after success, and unlock after a failed send. Validation errors focus the wedding details; confirmation and submitted review appear in the final send panel.
+- Removed both the Planning Your Stay panel and the general Explore Rwanda with Visit Rwanda button. Each experience retains its individual Explore Experience link.
 - Added a Discover Rwanda navigation link. The compact menu starts at 1200px to fit the links without reducing their text size.
 
 ## Official destination references
@@ -16,7 +16,6 @@ Checked on 16 November 2026:
 - Akagera: https://visitrwanda.com/destinations/akagera-national-park-2/
 - Kigali Genocide Memorial: https://kgm.rw/visit/
 - Outdoor adventure information: https://visitrwanda.com/tourism/interests/sports-adventure/
-- General inspiration: https://visitrwanda.com/
 
 Gorilla trekking is labelled Volcanoes National Park, Rwanda. Duration suggestions come from the owner's approved brief; they are not fixed itineraries. No prices, departures or guaranteed wildlife sightings are promised. The adventure card links to general Visit Rwanda information, with no individual activity booking links.
 
@@ -28,18 +27,16 @@ Activity image sources:
 
 - Gorillas: https://visitrwanda.com/wp-content/uploads/2026/03/Amahoro-Gorilla-group-1-1-1024x576.jpg
 - Akagera lioness, replacing the boat/lake photo: https://visitrwanda.com/wp-content/uploads/fly-images/1396/Visit-Rwanda-Akagera-Lion-in-Tree-1920x1280.jpg (Matthew Poole; the visible photographer credit is preserved).
-- Kigali Genocide Memorial building and entrance courtyard, replacing the garden photo: https://kgm.rw/wp-content/uploads/2023/04/building.webp (from the memorial's official home page).
+- Kwibuka Flame of Remembrance: owner's supplied `public/images/kwibuka .jpeg`, served as `public/images/experiences/kwibuka.webp`. The original upload is preserved. This replaces the previous memorial building photograph.
 - Zipline photography: https://www.fazenda.rw/web/image/22315-50b49dc8/ZIPLINE1.webp
 
 Images are served locally as optimized WebP assets with descriptive alt text. The zipline photograph shows the activity; it does not imply that the wedding hosts have selected a provider.
 
 ## Verification
 
-Latest photo and section cleanup: 72 unit/integration tests, ESLint, the production build, and four browser scenarios passed. The browser checks cover the multi-select RSVP submission and image loading/layout at 320px, 390px and 1440px, with the removed sections and navigation link absent. Desktop and mobile previews below reflect the replacement photographs and selected checkboxes.
-
-Automated RSVP tests intercept preparation and delivery requests and send no email. Tests verify that multiple checkbox selections flow from the separate Discover Rwanda section into the validated RSVP, owner email table, submitted review and WhatsApp reply. API tests check the actual table fields in both AJAX and CAPTCHA delivery paths. Native audio and gallery checks protect the existing invitation behavior.
-
-- 72 unit and integration tests passed across nine files, including the shared checkbox/RSVP journey and actual API table preparation.
-- The standalone layout was verified across six sizes. Seven checkbox-update browser scenarios passed, including selecting multiple activities with mouse and keyboard, submitting them with RSVP, showing them in the submitted review, locking selections after success, and 320px, 390px and 1440px layouts. The 390px check passed on rerun after a timing interruption.
+- 72 unit/integration tests passed across nine files. The shared guest journey checks wedding details before optional experiences, one final button associated with the wedding form, multiple selections in native FormData, selected IDs in the JSON payload, readable WhatsApp text and locked choices after success. API tests verify the owner email table fields in both AJAX and CAPTCHA delivery preparations.
+- Ten browser scenarios passed across the initial run and targeted recheck: multiple experience selections; skipping all experiences; validation focus and a wedding-only reply; all three attendance/accommodation paths; retry after activation failure; CAPTCHA fallback; and image loading/layout at 320px, 390px and 1440px. The recheck scoped the alert assertion to the RSVP section to exclude Next.js's route announcer and gave the longer selection journey a 60-second test budget.
 - ESLint and the production build passed, including TypeScript validation.
-- Production smoke checks at 1440px and 390px verified selected checkboxes, matching selected-experience rows in AJAX and CAPTCHA table preparations, no horizontal overflow and no browser console errors. The local preparation check did not send email. [Discover Rwanda desktop](screenshots/experiences/desktop.png), [mobile](screenshots/experiences/mobile.png), and [enhanced couple feature](screenshots/experiences/enhanced-couple-mobile.png) previews are included.
+- A production browser smoke check verified the layout at 1440px and 390px, native checkbox/button form association, and a click on the final submit button through the actual local preparation API. Both AJAX and CAPTCHA preparations contain the same selected-experience row with the table email template. Provider delivery was intercepted locally and returned a fixture response; no email was sent. There was no horizontal overflow or browser console error.
+
+Previews: [complete RSVP-first flow on desktop](screenshots/experiences/wedding-first-desktop.png), [complete flow on mobile](screenshots/experiences/wedding-first-mobile.png), [experience cards on desktop](screenshots/experiences/desktop.png), [experience cards on mobile](screenshots/experiences/mobile.png), and [enhanced couple feature](screenshots/experiences/enhanced-couple-mobile.png).

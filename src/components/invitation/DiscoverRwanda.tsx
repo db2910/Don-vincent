@@ -15,7 +15,7 @@ export default function DiscoverRwanda({ selected, onSelectionChange, disabled }
       <p className={styles.tagline}>Your journey doesn’t end at the celebration.</p>
       <p>While you’re here to celebrate our special day, we invite you to discover the beauty, culture and unforgettable experiences Rwanda has to offer.</p>
       <p>From extraordinary wildlife encounters to meaningful cultural experiences and thrilling adventures, make the most of your stay in the Land of a Thousand Hills.</p>
-      <p className={styles.selectionHint}>Select any experiences that interest you. You can choose more than one, and your choices will be included when you send your RSVP below.</p>
+      <p className={styles.selectionHint}>These experiences are optional. Select as many as you like, then send your wedding RSVP and your choices together below.</p>
     </div>
     <div className={styles.grid}>
       {rwandaExperiences.map((experience, index) => <article className={`${styles.card} ${selected.includes(experience.id) ? styles.selected : ""}`} key={experience.id} aria-labelledby={`discover-${experience.id}`} data-reveal>
@@ -35,9 +35,6 @@ export default function DiscoverRwanda({ selected, onSelectionChange, disabled }
           </label>
         </div>
       </article>)}
-    </div>
-    <div className={styles.guideLink} data-reveal>
-      <a href="https://visitrwanda.com/" target="_blank" rel="noopener noreferrer" className={styles.guide}>Explore Rwanda with Visit Rwanda <ArrowUpRight size={20} aria-hidden="true"/></a>
     </div>
   </section>;
 }

@@ -24,13 +24,8 @@
 .details dd { margin:0; min-width:0; }
 .explore { display:flex; align-items:center; gap:12px; align-self:flex-start; min-height:44px; font-size:18px; font-weight:500; color:#594329; text-decoration:underline; text-underline-offset:5px; margin-top:14px; }
 .explore:hover { color:#8b6b37; }
-.guideLink { margin:36px auto 0; text-align:center; }
-.guide { display:inline-flex; justify-content:center; align-items:center; gap:12px; max-width:100%; margin-top:16px; padding:12px 18px; background:#f8f0e2; border:1px solid #a08350; color:#49341c; font-size:22px; font-weight:700; line-height:1.5; text-decoration:underline; text-underline-offset:4px; }
-.guide svg { flex-shrink:0; }
-.guide:hover { background:var(--pearl); }
 .srOnly { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
 @media(max-width:700px) {
   .intro { margin-bottom:36px; }.intro h2 { font-size:64px; }.intro .tagline { font-size:23px; }.intro p:not(.tagline):not(:first-child) { font-size:19px; }
   .grid { grid-template-columns:1fr; gap:28px; }.copy { padding:24px 22px; }.copy h3 { font-size:30px; }.description { font-size:19px; }
-  .guide { font-size:21px; padding:12px; gap:8px; text-align:left; }
 }

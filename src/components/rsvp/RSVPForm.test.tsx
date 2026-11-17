@@ -44,16 +44,23 @@ function stubResponse(body: object) {
 }
 
 describe("RSVP guest journey", { timeout: 15_000 }, () => {
-  it("shares multiple standalone experience selections with the RSVP and locks them after success", async () => {
+  it("puts wedding details first and submits external experience choices through one final button", async () => {
     const user = userEvent.setup();
     const fetchMock = stubResponse({ submitted: true });
     render(<GuestResponse whatsappNumber="250788408241" />);
+    const form = screen.getByRole("form", { name: "Wedding RSVP" });
+    const discover = screen.getByRole("region", { name: "Discover Rwanda" });
+    const send = screen.getByRole("button", { name: /Send My RSVP/ });
+    expect(form.compareDocumentPosition(discover) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(discover.compareDocumentPosition(send) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect((send as HTMLButtonElement).form).toBe(form);
+    await guest(user);
+    await user.click(screen.getByLabelText("No, I have my own arrangements"));
     const gorillas = screen.getByRole("checkbox", { name: "Gorilla Trekking in Volcanoes National Park" });
     const memorial = screen.getByRole("checkbox", { name: "Visit the Kigali Genocide Memorial" });
     await user.click(gorillas); await user.click(memorial);
     expect(gorillas.closest("form")).toBeNull();
-    await guest(user);
-    await user.click(screen.getByLabelText("No, I have my own arrangements"));
+    expect(new FormData(form as HTMLFormElement).getAll("experiences")).toEqual(["gorilla-trekking", "kigali-memorial"]);
     const message = decodeURIComponent(screen.getByRole("link", { name: /RSVP via WhatsApp/ }).getAttribute("href")!);
     expect(message).toContain("Gorilla Trekking in Volcanoes National Park, Visit the Kigali Genocide Memorial");
     await user.click(screen.getByRole("button", { name: /Send My RSVP/ }));

@@ -1,4 +1,12 @@
-.rsvp-section{background:var(--ivory,#f8f4ec);padding-inline:24px;position:relative;scroll-margin-top:104px}
+.rsvp-section{background:var(--ivory,#f8f4ec);position:relative;scroll-margin-top:104px}
+.rsvp-section .rsvp-details,.rsvp-section .rsvp-submit-section{padding-inline:24px}
+.rsvp-submit-section{border-top:1px solid var(--line)}
+.rsvp-next{border-top:1px solid #c4a46a50;padding-top:24px;font-size:18px;line-height:1.8;color:#685644}
+.rsvp-next a{display:inline-flex;align-items:center;gap:12px;min-height:44px;margin-top:16px;color:#594329;text-decoration:underline;text-underline-offset:4px}
+#rsvp-send{scroll-margin-top:28px}
+#rsvp-send:focus{outline:2px solid #8b6b37;outline-offset:5px}
+.rsvp-submit-title{font-family:var(--font-serif,Georgia,serif);font-size:25px;line-height:1.5;text-align:center;margin-bottom:16px}
+.rsvp-submit-introduction{font-size:19px;line-height:1.8;text-align:center;margin-bottom:24px;color:#685644}
 .rsvp-intro{text-align:center;margin:0 auto 48px;max-width:680px}
 .rsvp-small-ornament{display:block;color:#987746;font-size:34px;margin-bottom:16px}
 .rsvp-intro .eyebrow{font-size:14px;letter-spacing:.16em;margin-bottom:20px}
@@ -58,7 +66,7 @@
 .rsvp-send span{font-family:Georgia,serif;font-size:22px}
 .rsvp-send:focus-visible,.rsvp-whatsapp-link:focus-visible{outline:2px solid #8b6b37;outline-offset:5px}
 .rsvp-send:disabled{cursor:default;opacity:.7;transform:none}
-.rsvp-form-fields:disabled .rsvp-send:hover{background:var(--ink,#493a2f)}
+.rsvp-send:disabled:hover{background:var(--ink,#493a2f)}
 .rsvp-review{margin:14px 0 0;padding:8px 0;border-top:1px solid #c4a46a50;font-size:17px;line-height:1.7;text-align:left}
 .rsvp-review>div{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:20px;padding:11px 0}
 .rsvp-review dt{color:#685644;font-size:15px}
@@ -82,6 +90,6 @@
 .rsvp-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .rsvp-reveal{animation:rsvp-reveal .3s ease both}
 @keyframes rsvp-reveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:600px){.rsvp-section{padding-inline:16px}.rsvp-intro{margin-bottom:34px}.rsvp-intro .eyebrow{font-size:14px;letter-spacing:.1em}.rsvp-paper{padding:34px 24px}.rsvp-choices-pair{grid-template-columns:1fr}.rsvp-budget{grid-template-columns:1fr}.rsvp-stay-details{padding-left:16px}.rsvp-send{width:100%;min-width:0;gap:18px}.rsvp-review>div{grid-template-columns:1fr;gap:4px;padding:9px 0}.rsvp-confirmation{padding:16px;gap:10px}}
+@media(max-width:600px){.rsvp-section .rsvp-details,.rsvp-section .rsvp-submit-section{padding-inline:16px}.rsvp-intro{margin-bottom:34px}.rsvp-intro .eyebrow{font-size:14px;letter-spacing:.1em}.rsvp-paper{padding:34px 24px}.rsvp-choices-pair{grid-template-columns:1fr}.rsvp-budget{grid-template-columns:1fr}.rsvp-stay-details{padding-left:16px}.rsvp-send{width:100%;min-width:0;gap:18px}.rsvp-review>div{grid-template-columns:1fr;gap:4px;padding:9px 0}.rsvp-confirmation{padding:16px;gap:10px}}
 @media(max-width:350px){.rsvp-paper{padding:32px 18px}.rsvp-stay-details{padding-left:12px}.rsvp-choice{padding:12px;gap:10px}.rsvp-intro h2{font-size:56px}}
 @media(prefers-reduced-motion:reduce){.rsvp-reveal,.rsvp-confirmation{animation:none}.rsvp-field input,.rsvp-field select,.rsvp-field textarea,.rsvp-choice{transition:none}}

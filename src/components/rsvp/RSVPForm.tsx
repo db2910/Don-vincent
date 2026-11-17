@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { rsvpSchema, type RSVPPayload } from "@/lib/validation/rsvp";
 import { isRsvpFailureCode, rsvpFailureMessages } from "@/lib/rsvp-errors";
 import { formSubmitPreparationSchema, type FormSubmitVerification } from "@/lib/validation/formsubmit";
@@ -25,7 +25,7 @@ type FormValues = {
 };
 type Errors = Record<string, string>;
 type SubmitState = "idle" | "validating" | "submitting" | "success" | "error";
-type Props = { whatsappNumber: string | null; deadline?: string | null; experiences?: RwandaExperienceId[]; onSelectionLockChange?: (locked: boolean) => void };
+type Props = { whatsappNumber: string | null; deadline?: string | null; experiences?: RwandaExperienceId[]; onSelectionLockChange?: (locked: boolean) => void; children?: ReactNode };
 
 const initialValues: FormValues = {
   fullName: "", contact: "", attendanceStatus: "", accommodationStatus: "",
@@ -120,7 +120,7 @@ function Review({ payload }: { payload: RSVPPayload }) {
   </dl>;
 }
 
-export default function RSVPForm({ whatsappNumber, deadline, experiences = [], onSelectionLockChange }: Props) {
+export default function RSVPForm({ whatsappNumber, deadline, experiences = [], onSelectionLockChange, children }: Props) {
   const [values, setValues] = useState<FormValues>(initialValues);
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<SubmitState>("idle");
@@ -237,51 +237,64 @@ export default function RSVPForm({ whatsappNumber, deadline, experiences = [], o
     "Accommodation preferences are for planning only, not a booking.",
   ].join("\n") : "";
 
-  return <section id="rsvp" className="section rsvp-section" aria-labelledby="rsvp-title">
-    <div className="rsvp-intro">
-      <span className="rsvp-small-ornament" aria-hidden="true">✧</span>
-      <p className="eyebrow">WE&apos;D LOVE TO HAVE YOU WITH US</p>
-      <h2 className="script" id="rsvp-title">Will you join us?</h2>
-      <p>Please let us know whether you will attend.</p>
-      {deadline && <p className="rsvp-deadline">Kindly reply by {deadline}.</p>}
-    </div>
-    <div className="rsvp-paper">
-      <p className="rsvp-form-introduction">A personal reply, with love. Fields marked <span className="rsvp-required">*</span> are required.</p>
-      <noscript><p className="rsvp-note">Please enable JavaScript to reply online. You can still view all the wedding details above.</p></noscript>
-      <form id="wedding-rsvp-form" method="post" action="/api/rsvp" noValidate onSubmit={handleSubmit} aria-busy={busy} aria-label="Wedding RSVP">
-        {(Object.keys(errors).length > 0 || submitError) && <div className="rsvp-error-summary" ref={errorRef} tabIndex={-1} role="alert">
-          {submitError || "Please check the highlighted details below."}
-          {supportCode && <p className="rsvp-support-code">Support code: {supportCode}</p>}
-          {verification && validPayload && <div className="rsvp-verification">
-            <p>You can also send your reply with a security check. Your details are already filled in.</p>
-            <button className="button" type="submit" form="rsvp-verification">Continue with verification <span aria-hidden="true">↗</span></button>
-            <p className="rsvp-field-hint">Opens FormSubmit in a new tab. Complete its security check and wait for confirmation there. Opening the tab alone does not confirm your RSVP.</p>
-          </div>}
-          {Object.keys(errors).length > 0 && <ul>{Object.entries(errors).map(([name, message]) => <li key={name}><a href={`#rsvp-${name}`} onClick={(event) => { event.preventDefault(); document.getElementById(`rsvp-${name}`)?.focus(); }}>{message}</a></li>)}</ul>}
-        </div>}
-        <fieldset className="rsvp-form-fields" aria-label="Your RSVP details" disabled={busy || sent}>
-          <div className="rsvp-honeypot" aria-hidden="true"><label htmlFor="rsvp-website">Leave this field empty</label><input id="rsvp-website" name="website" autoComplete="off" tabIndex={-1} value={values.website} onChange={(event) => change("website", event.target.value)} /></div>
-          <div className="rsvp-field"><label htmlFor="rsvp-fullName">Full name <span className="rsvp-required">*</span></label><input id="rsvp-fullName" name="fullName" autoComplete="name" maxLength={100} value={values.fullName} onChange={(event) => change("fullName", event.target.value)} required aria-invalid={!!errors.fullName} aria-describedby={errors.fullName ? "rsvp-fullName-error" : undefined} /><ErrorText name="fullName" errors={errors} /></div>
-          <div className="rsvp-field"><label htmlFor="rsvp-contact">Phone or email <span className="rsvp-required">*</span></label><input id="rsvp-contact" name="contact" type="text" autoComplete="off" maxLength={160} value={values.contact} onChange={(event) => change("contact", event.target.value)} required aria-invalid={!!errors.contact} aria-describedby={`rsvp-contact-hint${errors.contact ? " rsvp-contact-error" : ""}`} /><p className="rsvp-field-hint" id="rsvp-contact-hint">For a phone number, please include your country code.</p><ErrorText name="contact" errors={errors} /></div>
-          <ChoiceGroup name="attendanceStatus" label="Will you attend?" options={choices.attendanceStatus} value={values.attendanceStatus} onChange={change} errors={errors} />
-          {attending && <div className="rsvp-accommodation rsvp-reveal">
-            <ChoiceGroup name="accommodationStatus" label="Will you need accommodation?" options={choices.accommodationStatus} value={values.accommodationStatus} onChange={change} errors={errors} />
-            {values.accommodationStatus === "yes" && <div className="rsvp-stay-details rsvp-reveal">
-              <p className="rsvp-note">Share your preferences to help us plan your stay. This is not a booking.</p>
-              <div className="rsvp-field"><label htmlFor="rsvp-budgetAmount">Budget per room per night <span className="rsvp-required">*</span></label><div className="rsvp-budget"><div><label className="rsvp-sr-only" htmlFor="rsvp-budgetCurrency">Currency</label><select id="rsvp-budgetCurrency" name="budgetCurrency" value={values.budgetCurrency} onChange={(event) => change("budgetCurrency", event.target.value)} aria-invalid={!!errors.budgetCurrency} aria-describedby={errors.budgetCurrency ? "rsvp-budgetCurrency-error" : undefined}><option value="USD">USD — US dollars</option><option value="RWF">RWF — Rwanda francs</option></select></div><input id="rsvp-budgetAmount" name="budgetAmount" type="number" inputMode="decimal" min="0" step="any" value={values.budgetAmount} onChange={(event) => change("budgetAmount", event.target.value)} required aria-invalid={!!errors.budgetAmount} aria-describedby={`rsvp-budgetAmount-hint${errors.budgetAmount ? " rsvp-budgetAmount-error" : ""}`} /></div><p className="rsvp-field-hint" id="rsvp-budgetAmount-hint">Enter an amount greater than zero in your selected currency.</p><ErrorText name="budgetCurrency" errors={errors} /><ErrorText name="budgetAmount" errors={errors} /></div>
-              <div className="rsvp-field"><label htmlFor="rsvp-nights">How many nights will you stay? <span className="rsvp-required">*</span></label><input id="rsvp-nights" name="nights" className="rsvp-short-input" type="number" inputMode="numeric" min="1" step="1" value={values.nights} onChange={(event) => change("nights", event.target.value)} required aria-invalid={!!errors.nights} aria-describedby={errors.nights ? "rsvp-nights-error" : undefined} /><ErrorText name="nights" errors={errors} /></div>
-              <ChoiceGroup name="breakfastPreference" label="Would you like breakfast included?" options={choices.breakfastPreference} value={values.breakfastPreference} onChange={change} errors={errors} />
-              <ChoiceGroup name="accommodationType" label="Where would you prefer to stay?" options={choices.accommodationType} value={values.accommodationType} onChange={change} errors={errors} />
-              <ChoiceGroup name="sharingPreference" label="Room-sharing preference" options={choices.sharingPreference} value={values.sharingPreference} onChange={change} errors={errors} />
-              <div className="rsvp-field"><label htmlFor="rsvp-roomOccupants">How many people would stay in your room, including you? <span className="rsvp-required">*</span></label><input id="rsvp-roomOccupants" name="roomOccupants" className="rsvp-short-input" type="number" inputMode="numeric" min="1" step="1" value={values.roomOccupants} onChange={(event) => change("roomOccupants", event.target.value)} required aria-invalid={!!errors.roomOccupants} aria-describedby={errors.roomOccupants ? "rsvp-roomOccupants-error" : undefined} /><ErrorText name="roomOccupants" errors={errors} /></div>
+  return <section id="rsvp" className="rsvp-section" aria-labelledby="rsvp-title">
+    <div className="section rsvp-details">
+      <div className="rsvp-intro">
+        <span className="rsvp-small-ornament" aria-hidden="true">✧</span>
+        <p className="eyebrow">WE&apos;D LOVE TO HAVE YOU WITH US</p>
+        <h2 className="script" id="rsvp-title">Will you join us?</h2>
+        <p>Please let us know whether you will attend.</p>
+        {deadline && <p className="rsvp-deadline">Kindly reply by {deadline}.</p>}
+      </div>
+      <div className="rsvp-paper">
+        <p className="rsvp-form-introduction">A personal reply, with love. Fields marked <span className="rsvp-required">*</span> are required.</p>
+        <noscript><p className="rsvp-note">Please enable JavaScript to reply online. You can still view all the wedding details above.</p></noscript>
+        <form id="wedding-rsvp-form" method="post" action="/api/rsvp" noValidate onSubmit={handleSubmit} aria-busy={busy} aria-label="Wedding RSVP">
+          {(Object.keys(errors).length > 0 || submitError) && <div className="rsvp-error-summary" ref={errorRef} tabIndex={-1} role="alert">
+            {submitError || "Please check the highlighted details below."}
+            {supportCode && <p className="rsvp-support-code">Support code: {supportCode}</p>}
+            {verification && validPayload && <div className="rsvp-verification">
+              <p>You can also send your reply with a security check. Your details are already filled in.</p>
+              <button className="button" type="submit" form="rsvp-verification">Continue with verification <span aria-hidden="true">↗</span></button>
+              <p className="rsvp-field-hint">Opens FormSubmit in a new tab. Complete its security check and wait for confirmation there. Opening the tab alone does not confirm your RSVP.</p>
             </div>}
+            {Object.keys(errors).length > 0 && <ul>{Object.entries(errors).map(([name, message]) => <li key={name}><a href={`#rsvp-${name}`} onClick={(event) => { event.preventDefault(); document.getElementById(`rsvp-${name}`)?.focus(); }}>{message}</a></li>)}</ul>}
           </div>}
-          <div className="rsvp-message rsvp-field"><label htmlFor="rsvp-guestMessage">A message for the couple <span className="rsvp-optional">(optional)</span></label><textarea id="rsvp-guestMessage" name="guestMessage" rows={4} maxLength={1200} value={values.guestMessage} onChange={(event) => change("guestMessage", event.target.value)} aria-invalid={!!errors.guestMessage} aria-describedby={errors.guestMessage ? "rsvp-guestMessage-error" : undefined} /><ErrorText name="guestMessage" errors={errors} /></div>
-          <p className="rsvp-privacy">Your contact details, stay preferences and selected Rwanda experiences are shared privately with the wedding hosts to help plan the celebration. Your selections do not reserve a room or book a trip.</p>
-          <div className="rsvp-actions">
-            <button type="submit" className="button rsvp-send" disabled={busy || sent}>{sent ? "RSVP sent" : status === "submitting" ? "Sending your reply…" : status === "validating" ? "Checking your reply…" : status === "error" ? "Try Again" : "Send My RSVP"}<span aria-hidden="true">♡</span></button>
-          </div>
-        </fieldset>
+          <fieldset className="rsvp-form-fields" aria-label="Your RSVP details" disabled={busy || sent}>
+            <div className="rsvp-honeypot" aria-hidden="true"><label htmlFor="rsvp-website">Leave this field empty</label><input id="rsvp-website" name="website" autoComplete="off" tabIndex={-1} value={values.website} onChange={(event) => change("website", event.target.value)} /></div>
+            <div className="rsvp-field"><label htmlFor="rsvp-fullName">Full name <span className="rsvp-required">*</span></label><input id="rsvp-fullName" name="fullName" autoComplete="name" maxLength={100} value={values.fullName} onChange={(event) => change("fullName", event.target.value)} required aria-invalid={!!errors.fullName} aria-describedby={errors.fullName ? "rsvp-fullName-error" : undefined} /><ErrorText name="fullName" errors={errors} /></div>
+            <div className="rsvp-field"><label htmlFor="rsvp-contact">Phone or email <span className="rsvp-required">*</span></label><input id="rsvp-contact" name="contact" type="text" autoComplete="off" maxLength={160} value={values.contact} onChange={(event) => change("contact", event.target.value)} required aria-invalid={!!errors.contact} aria-describedby={`rsvp-contact-hint${errors.contact ? " rsvp-contact-error" : ""}`} /><p className="rsvp-field-hint" id="rsvp-contact-hint">For a phone number, please include your country code.</p><ErrorText name="contact" errors={errors} /></div>
+            <ChoiceGroup name="attendanceStatus" label="Will you attend?" options={choices.attendanceStatus} value={values.attendanceStatus} onChange={change} errors={errors} />
+            {attending && <div className="rsvp-accommodation rsvp-reveal">
+              <ChoiceGroup name="accommodationStatus" label="Will you need accommodation?" options={choices.accommodationStatus} value={values.accommodationStatus} onChange={change} errors={errors} />
+              {values.accommodationStatus === "yes" && <div className="rsvp-stay-details rsvp-reveal">
+                <p className="rsvp-note">Share your preferences to help us plan your stay. This is not a booking.</p>
+                <div className="rsvp-field"><label htmlFor="rsvp-budgetAmount">Budget per room per night <span className="rsvp-required">*</span></label><div className="rsvp-budget"><div><label className="rsvp-sr-only" htmlFor="rsvp-budgetCurrency">Currency</label><select id="rsvp-budgetCurrency" name="budgetCurrency" value={values.budgetCurrency} onChange={(event) => change("budgetCurrency", event.target.value)} aria-invalid={!!errors.budgetCurrency} aria-describedby={errors.budgetCurrency ? "rsvp-budgetCurrency-error" : undefined}><option value="USD">USD — US dollars</option><option value="RWF">RWF — Rwanda francs</option></select></div><input id="rsvp-budgetAmount" name="budgetAmount" type="number" inputMode="decimal" min="0" step="any" value={values.budgetAmount} onChange={(event) => change("budgetAmount", event.target.value)} required aria-invalid={!!errors.budgetAmount} aria-describedby={`rsvp-budgetAmount-hint${errors.budgetAmount ? " rsvp-budgetAmount-error" : ""}`} /></div><p className="rsvp-field-hint" id="rsvp-budgetAmount-hint">Enter an amount greater than zero in your selected currency.</p><ErrorText name="budgetCurrency" errors={errors} /><ErrorText name="budgetAmount" errors={errors} /></div>
+                <div className="rsvp-field"><label htmlFor="rsvp-nights">How many nights will you stay? <span className="rsvp-required">*</span></label><input id="rsvp-nights" name="nights" className="rsvp-short-input" type="number" inputMode="numeric" min="1" step="1" value={values.nights} onChange={(event) => change("nights", event.target.value)} required aria-invalid={!!errors.nights} aria-describedby={errors.nights ? "rsvp-nights-error" : undefined} /><ErrorText name="nights" errors={errors} /></div>
+                <ChoiceGroup name="breakfastPreference" label="Would you like breakfast included?" options={choices.breakfastPreference} value={values.breakfastPreference} onChange={change} errors={errors} />
+                <ChoiceGroup name="accommodationType" label="Where would you prefer to stay?" options={choices.accommodationType} value={values.accommodationType} onChange={change} errors={errors} />
+                <ChoiceGroup name="sharingPreference" label="Room-sharing preference" options={choices.sharingPreference} value={values.sharingPreference} onChange={change} errors={errors} />
+                <div className="rsvp-field"><label htmlFor="rsvp-roomOccupants">How many people would stay in your room, including you? <span className="rsvp-required">*</span></label><input id="rsvp-roomOccupants" name="roomOccupants" className="rsvp-short-input" type="number" inputMode="numeric" min="1" step="1" value={values.roomOccupants} onChange={(event) => change("roomOccupants", event.target.value)} required aria-invalid={!!errors.roomOccupants} aria-describedby={errors.roomOccupants ? "rsvp-roomOccupants-error" : undefined} /><ErrorText name="roomOccupants" errors={errors} /></div>
+              </div>}
+            </div>}
+            <div className="rsvp-message rsvp-field"><label htmlFor="rsvp-guestMessage">A message for the couple <span className="rsvp-optional">(optional)</span></label><textarea id="rsvp-guestMessage" name="guestMessage" rows={4} maxLength={1200} value={values.guestMessage} onChange={(event) => change("guestMessage", event.target.value)} aria-invalid={!!errors.guestMessage} aria-describedby={errors.guestMessage ? "rsvp-guestMessage-error" : undefined} /><ErrorText name="guestMessage" errors={errors} /></div>
+          </fieldset>
+        </form>
+        {children && !sent && <div className="rsvp-next">
+          <p>Next, explore optional experiences in Rwanda. Your wedding reply and any selected experiences will be sent together using the button below the cards.</p>
+          <a href="#rsvp-send">Skip experiences and send RSVP <span aria-hidden="true">↓</span></a>
+        </div>}
+      </div>
+    </div>
+    {children}
+    <div className="section rsvp-submit-section">
+      <div id="rsvp-send" className="rsvp-paper" tabIndex={-1} aria-busy={busy}>
+        <h3 className="rsvp-submit-title">Your wedding reply</h3>
+        <p className="rsvp-submit-introduction">{children ? "Send your RSVP and any selected experiences together." : "Send your reply to the wedding hosts."}</p>
+        <p className="rsvp-privacy">Your contact details, stay preferences and selected Rwanda experiences are shared privately with the wedding hosts to help plan the celebration. Your selections do not reserve a room or book a trip.</p>
+        <div className="rsvp-actions">
+          <button type="submit" form="wedding-rsvp-form" className="button rsvp-send" disabled={busy || sent}>{sent ? "RSVP sent" : status === "submitting" ? "Sending your reply…" : status === "validating" ? "Checking your reply…" : status === "error" ? "Try Again" : "Send My RSVP"}<span aria-hidden="true">♡</span></button>
+        </div>
         {sent && <div className="rsvp-confirmation" ref={resultRef} tabIndex={-1} role="status">
           <span className="rsvp-confirmation-mark" aria-hidden="true">✓</span>
           <div>
@@ -297,11 +310,11 @@ export default function RSVPForm({ whatsappNumber, deadline, experiences = [], o
           {validPayload ? <a className="rsvp-whatsapp-link" href={`https://wa.me/${whatsappDigits}?text=${encodeURIComponent(whatsappText)}`} target="_blank" rel="noopener noreferrer" onClick={() => setWhatsappOpened(true)}>RSVP via WhatsApp <span aria-hidden="true">↗</span></a> : <button className="rsvp-whatsapp-link" type="button" disabled>RSVP via WhatsApp</button>}
           <p>{!validPayload ? "Complete your details to prepare a WhatsApp message." : whatsappOpened ? "Your message has been prepared. Send it in WhatsApp to reach the hosts. Opening WhatsApp does not send this form." : "Prefer a personal message? Send your prepared reply to the hosts. Opening WhatsApp does not send this form."}</p>
         </div>}
-      </form>
+      </div>
       {verification && status === "error" && validPayload && <form id="rsvp-verification" action={verification.action} method="post" target="_blank" rel="noopener" aria-label="RSVP with verification">
         {Object.entries(verification.fields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
       </form>}
+      <p className="rsvp-signature">With love, Shee Salamata &amp; Don Vincent</p>
     </div>
-    <p className="rsvp-signature">With love, Shee Salamata &amp; Don Vincent</p>
   </section>;
 }

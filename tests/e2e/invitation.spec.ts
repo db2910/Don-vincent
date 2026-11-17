@@ -160,12 +160,16 @@ test('wedding itinerary matches the confirmed programme and refresh at RSVP reop
 });
 
 test('Discover Rwanda shares multiple checkbox selections with the wedding RSVP', async ({ page }) => {
+  test.setTimeout(60_000);
   let submitted: Record<string, unknown> | undefined;
   await page.route('**/api/rsvp', async route => {
     submitted = route.request().postDataJSON();
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(preparedReply(route))});
   });
   await enter(page);
+  await guest(page);
+  await page.getByRole('radio', {name:'Joyfully accepts'}).check();
+  await page.getByRole('radio', {name:'No, I have my own arrangements'}).check();
   const discover = page.locator('#discover-rwanda');
   await discover.scrollIntoViewIfNeeded();
   await expect(discover.getByRole('heading', {name:'Discover Rwanda', exact:true})).toBeVisible();
@@ -174,31 +178,58 @@ test('Discover Rwanda shares multiple checkbox selections with the wedding RSVP'
     'Gorilla Trekking in Volcanoes National Park', 'Discover the Big Five in Akagera National Park',
     'Visit the Kigali Genocide Memorial', 'Adventure & Outdoor Experiences',
   ]);
-  expect(await discover.evaluate(el => el.previousElementSibling?.id)).toBe('moments');
+  const detailsBounds = (await page.locator('.rsvp-details').boundingBox())!;
+  const discoverBounds = (await discover.boundingBox())!;
+  const sendBounds = (await page.locator('#rsvp-send').boundingBox())!;
+  expect(detailsBounds.y + detailsBounds.height).toBeLessThanOrEqual(discoverBounds.y);
+  expect(discoverBounds.y + discoverBounds.height).toBeLessThanOrEqual(sendBounds.y);
+  expect(await page.getByRole('button', {name:'Send My RSVP'}).evaluate((button:HTMLButtonElement) => button.form?.id)).toBe('wedding-rsvp-form');
   await expect(page.locator('#travel, a[href="#travel"]')).toHaveCount(0);
   await expect(page.getByRole('heading', {name:'Planning Your Stay?'})).toHaveCount(0);
   expect(await discover.evaluate(el => el.closest('form'))).toBeNull();
   await expect(discover.getByRole('link', {name:/Explore Experience:/})).toHaveCount(4);
   await expect(discover.getByRole('link', {name:/Explore Experience: Gorilla/})).toHaveAttribute('href','https://visitrwandabookings.rdb.rw/rdbportal/mountain-gorilla-tracking');
   await expect(discover.getByRole('link', {name:/Explore Experience: Visit the Kigali/})).toHaveAttribute('href','https://kgm.rw/visit/');
-  await expect(discover.getByRole('link', {name:/Explore Rwanda with Visit Rwanda/})).toHaveAttribute('href','https://visitrwanda.com/');
+  await expect(page.getByRole('link', {name:/Explore Rwanda with Visit Rwanda/})).toHaveCount(0);
+  await expect(discover.getByRole('img', {name:/Kwibuka Flame of Remembrance/})).toHaveAttribute('src', /kwibuka/);
   await expect(discover.getByRole('checkbox')).toHaveCount(4);
   const gorillas = discover.getByRole('checkbox', {name:'Gorilla Trekking in Volcanoes National Park'});
   const memorial = discover.getByRole('checkbox', {name:'Visit the Kigali Genocide Memorial'});
   await gorillas.check(); await memorial.focus(); await page.keyboard.press('Space');
   await expect(gorillas).toBeChecked(); await expect(memorial).toBeChecked();
   await gorillas.uncheck(); await expect(gorillas).not.toBeChecked(); await gorillas.check();
-  await page.locator('#rsvp').scrollIntoViewIfNeeded();
-  await guest(page);
-  await page.getByRole('radio', {name:'Joyfully accepts'}).check();
-  await page.getByRole('radio', {name:'No, I have my own arrangements'}).check();
-  await expect(page.locator('#rsvp').getByRole('checkbox')).toHaveCount(0);
+  expect(await page.getByRole('form', {name:'Wedding RSVP'}).evaluate((form:HTMLFormElement) => new FormData(form).getAll('experiences'))).toEqual(['gorilla-trekking','kigali-memorial']);
+  await expect(page.getByRole('form', {name:'Wedding RSVP'}).getByRole('checkbox')).toHaveCount(0);
   await page.getByRole('button', {name:'Send My RSVP'}).click();
   await expect(page.locator('#rsvp').getByRole('status')).toContainText('Your reply has been submitted');
   expect(submitted?.experiences).toEqual(['kigali-memorial', 'gorilla-trekking']);
   await expect(gorillas).toBeDisabled(); await expect(memorial).toBeDisabled();
   await page.getByText('View your submitted reply').click();
   await expect(page.locator('.rsvp-review')).toContainText('Gorilla Trekking in Volcanoes National Park, Visit the Kigali Genocide Memorial');
+});
+
+test('guests can skip optional experiences and send only their wedding RSVP', async ({ page }) => {
+  let submitted: Record<string, unknown> | undefined;
+  await page.route('**/api/rsvp', async route => {
+    submitted = route.request().postDataJSON();
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(preparedReply(route))});
+  });
+  await enter(page);
+  await page.getByRole('link', {name:'Skip experiences and send RSVP'}).click();
+  await expect(page.locator('#rsvp-send')).toBeFocused();
+  await expect(page.getByRole('button', {name:'Send My RSVP'})).toBeInViewport();
+  expect(submitted).toBeUndefined();
+  await page.getByRole('button', {name:'Send My RSVP'}).click();
+  await expect(page.locator('#rsvp').getByRole('alert')).toBeFocused();
+  expect(submitted).toBeUndefined();
+  await guest(page);
+  await page.getByRole('radio', {name:'Regretfully declines'}).check();
+  await page.getByRole('link', {name:'Skip experiences and send RSVP'}).click();
+  await page.getByRole('button', {name:'Send My RSVP'}).click();
+  await expect(page.getByRole('status')).toContainText('Your reply has been submitted');
+  expect(submitted?.experiences).toEqual([]);
+  await page.getByText('View your submitted reply').click();
+  await expect(page.locator('.rsvp-review')).toContainText('None selected');
 });
 
 for(const choice of ['yes','no','declined']) {
